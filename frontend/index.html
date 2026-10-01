@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototipo — Sistema de Registro de Tesis</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="auth-gate">
+  <div class="card">
+    <h3 id="auth-title">Iniciar sesión</h3>
+    <div class="field" id="auth-nombre-wrap" hidden>
+      <label>Nombre</label>
+      <input id="auth-nombre" autocomplete="name" placeholder="Tu nombre">
+    </div>
+    <div class="field">
+      <label>Correo</label>
+      <input id="auth-email" type="email" autocomplete="username" placeholder="correo@uach.mx">
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input id="auth-pass" type="password" autocomplete="current-password" placeholder="Mínimo 6 caracteres">
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn" id="auth-submit" type="button">Entrar</button>
+      <button class="btn ghost" id="auth-switch" type="button">Crear cuenta</button>
+    </div>
+    <p class="note" id="auth-msg" hidden></p>
+  </div>
+</div>
+
+<div id="app-shell" hidden>
+
+
+<div class="topbar">
+  <h1 id="brand-home">Registro de Tesis</h1>
+  <span>Prototipo funcional — validación de mejoras solicitadas</span>
+  <div class="rolebox">
+    <span class="roleflag">Ver como:</span>
+    <button class="rolebtn on" id="role-admin">Administrador</button>
+    <button class="rolebtn" id="role-usuario">Usuario (solo lectura)</button>
+    <button class="rolebtn" id="btn-salir" type="button">Salir</button>
+  </div>
+</div>
+
+<div class="app">
+  <div class="rail">
+    <button class="tab active" data-tab="inicio"><span class="n">00</span>Inicio</button>
+    <button class="tab" data-tab="registro"><span class="n">01</span>Registro Tesis</button>
+    <button class="tab" data-tab="alumnos"><span class="n">02</span>Alumnos</button>
+    <button class="tab" data-tab="docentes"><span class="n">03</span>Docentes</button>
+    <button class="tab" data-tab="actividad"><span class="n">04</span>Actividad Docente</button>
+    <button class="tab" data-tab="bd"><span class="n">05</span>Base de Datos</button>
+    <button class="tab" data-tab="busqueda"><span class="n">06</span>Búsqueda</button>
+    <button class="tab" data-tab="constancias"><span class="n">07</span>Constancias</button>
+    <button class="tab" data-tab="asignacion"><span class="n">08</span>Asignación / Oficio</button>
+    <button class="tab" data-tab="historial"><span class="n">09</span>Historial</button>
+  </div>
+
+  <div class="main"><div class="sheet">
+
+    <div class="section active" id="sec-inicio">
+      <div class="menuhead">
+        <div class="crest">FCA</div>
+        <h2>Universidad Autónoma de Chihuahua</h2>
+        <p>Facultad de Contaduría y Administración — Secretaría de Investigación y Posgrado</p>
+      </div>
+      <div class="menugrid">
+        <button class="menubtn" data-go="registro">REGISTRO TESIS</button>
+        <button class="menubtn" data-go="bd">BASE DE DATOS</button>
+        <button class="menubtn" data-go="docentes">DOCENTES</button>
+        <button class="menubtn" data-go="busqueda">BUSQUEDA</button>
+        <button class="menubtn" data-go="actividad">ACTIVIDAD DOCENTE</button>
+        <button class="menubtn" data-go="constancias" data-punto="individual">CONSTANCIA INDIVIDUAL</button>
+        <button class="menubtn" data-go="constancias" data-punto="3.3.1">CONSTANCIA 3.3.1 y 3.3.3</button>
+        <button class="menubtn" data-go="constancias" data-punto="3.3.2">CONSTANCIA 3.3.2</button>
+        <button class="menubtn" data-go="asignacion" data-modo="bd">BD ASIGNACIÓN ASESOR</button>
+        <button class="menubtn" data-go="asignacion" data-modo="oficio">OFICIO ASIGNACIÓN</button>
+        <button class="menubtn" data-go="alumnos" style="grid-column:1/-1;">ALUMNOS</button>
+      </div>
+      <p class="menunote">Los botones de tu menú ya están aquí, más el módulo de Alumnos que agregamos. Cada uno abre su pantalla en el panel de la izquierda.</p>
+    </div>
+
+    <div class="section" id="sec-registro">
+      <h2>Nueva Tesis</h2>
+      <p class="lede">El alumno se busca en la base de Alumnos ya registrados. Al elegir el grado, solo aparecen los campos de docente que corresponden: 3 en Licenciatura, 4 en Maestría y 5 en Doctorado. Se capturan también Punto, quién capturó, Archivo, Digital y Observaciones — igual que en tu hoja Base de Datos.</p>
+      <div class="readonly-note">🔒 Estás viendo este módulo como <b>usuario de solo lectura</b>. Solo un administrador puede capturar tesis nuevas.</div>
+
+      <div class="card admin-only">
+        <h3>Alumno y tesis</h3>
+        <div class="row2">
+          <div class="field autowrap">
+            <label>Alumno(s)</label>
+            <input id="r-alumno" autocomplete="off" placeholder="Escribe para buscar en Alumnos…">
+            <div class="suggestions" id="sugg-alumno"></div>
+          </div>
+          <div class="field"><label>Programa</label>
+            <select id="r-programa"><option>Individual</option><option>Curso Opción Grado</option><option>Curso Opción Tesis</option></select>
+          </div>
+        </div>
+        <div class="field"><label>Título de la tesis</label><input id="r-titulo" placeholder="Título completo del trabajo"></div>
+        <div class="row3">
+          <div class="field"><label>Fecha de elaboración</label><input id="r-fecha" type="date"></div>
+          <div class="field"><label>Ciudad</label>
+            <select id="r-ciudad"><option>CHIHUAHUA</option><option>CUAUHTÉMOC</option><option>DELICIAS</option><option>JUÁREZ</option><option>PARRAL</option><option>NUEVO CASAS GRANDES</option></select>
+          </div>
+          <div class="field"><label>Punto</label>
+            <select id="r-punto"><option value="3.3.1 TESIS DIRIGIDAS Y CONCLUIDAS">3.3.1 Tesis dirigidas y concluidas</option><option value="3.3.2 REVISOR DE TESIS">3.3.2 Revisor de tesis</option><option value="3.3.3 TESINAS ASESORADAS Y/O REVISADAS Y CONCLUIDAS">3.3.3 Tesinas asesoradas y/o revisadas</option></select>
+          </div>
+        </div>
+        <div class="row4">
+          <div class="field"><label>Capturó</label><input id="r-capturo" placeholder="Nombre de quien captura"></div>
+          <div class="field"><label>Archivo</label><select id="r-archivo"><option>SI</option><option>NO</option></select></div>
+          <div class="field"><label>Digital</label><select id="r-digital"><option>NO</option><option>SI</option></select></div>
+          <div class="field"><label>Fecha de captura</label><input id="r-fechacap" type="date"></div>
+        </div>
+        <div class="field"><label>Observaciones</label><textarea id="r-obs" placeholder="Opcional"></textarea></div>
+
+        <label style="display:block;font-size:11px;color:var(--ink-soft);margin-bottom:8px;">Tipo de grado</label>
+        <div class="gradorow" id="r-gradorow"></div>
+
+        <h3 style="margin-top:4px;">Docentes</h3>
+        <div id="r-docslots"></div>
+
+        <h3 style="margin-top:22px;">Documentos de la tesis</h3>
+        <div class="row4">
+          <div class="field"><label>Tipo de documento</label><select id="rd-tipo"></select></div>
+          <div class="field"><label>Fecha del documento</label><input id="rd-fecha" type="date"></div>
+          <div class="field" style="grid-column:span 2;"><label>Archivo</label><input id="rd-file" type="file"></div>
+        </div>
+        <button type="button" class="btn ghost small" id="rd-add">Agregar documento</button>
+        <div id="rd-list" style="margin-top:12px;"></div>
+
+        <div style="margin-top:16px;">
+          <button class="btn" id="r-guardar">Guardar tesis</button>
+          <button class="btn ghost" id="r-limpiar">Limpiar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="sec-alumnos">
+      <h2>Alumnos</h2>
+      <p class="lede">Base de datos de alumnos que alimenta el autocompletar del Registro de Tesis. Regístralos aquí una vez y ya no hace falta volver a teclear su nombre en cada tesis.</p>
+      <div class="readonly-note">🔒 Modo de solo lectura: puedes consultar el listado, pero no agregar ni editar alumnos.</div>
+
+      <div class="card admin-only">
+        <h3>Registrar alumno</h3>
+        <div class="row4">
+          <div class="field" style="grid-column:span 2;"><label>Nombre completo</label><input id="a-nombre" placeholder="Apellidos Nombre(s)"></div>
+          <div class="field"><label>Matrícula</label><input id="a-matricula"></div>
+          <div class="field"><label>Sexo</label><select id="a-sexo"><option>M</option><option>F</option></select></div>
+        </div>
+        <div class="row2"><div class="field"><label>Fecha de registro</label><input id="a-fecha" type="date"></div><div class="field"><label>Tipo de programa habitual</label>
+          <select id="a-tipo"><option>Individual</option><option>Curso Opción Grado</option><option>Curso Opción Tesis</option></select>
+        </div>
+        </div><button class="btn" id="a-agregar">Registrar alumno</button>
+      </div>
+
+      <div class="card">
+        <h3>Listado (<span id="a-count"></span>)</h3>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Alumno</th><th>Matrícula</th><th>Sexo</th><th>Programa habitual</th><th>Fecha de registro</th><th>Tesis registradas</th><th></th></tr></thead>
+          <tbody id="a-tbody"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <div class="section" id="sec-docentes">
+      <h2>Docentes</h2>
+      <p class="lede">Al registrar un nuevo docente, la lista se reordena alfabéticamente de inmediato. El grado académico se edita aquí y se sincroniza en automático con Constancias.</p>
+      <div class="readonly-note">🔒 Modo de solo lectura: puedes consultar el listado, pero no agregar, editar ni quitar docentes.</div>
+
+      <div class="card admin-only">
+        <h3>Agregar docente</h3>
+        <div class="row3">
+          <div class="field"><label>Nombre completo</label><input id="d-nombre" placeholder="APELLIDOS NOMBRE, TÍTULO"></div>
+          <div class="field"><label>No. Empleado</label><input id="d-empleado" type="number"></div>
+          <div class="field"><label>Grado académico</label><select id="d-grado"><option>Licenciatura</option><option>Maestría</option><option>Doctorado</option></select></div>
+        </div>
+        <div class="row4">
+          <div class="field"><label>Teléfono</label><input id="d-telefono"></div>
+          <div class="field"><label>Correo</label><input id="d-correo"></div>
+          <div class="field"><label>Sexo</label><select id="d-sexo"><option>M</option><option>F</option></select></div>
+          <div class="field"><label>Fecha de registro</label><input id="d-fecha" type="date"></div>
+        </div>
+        <button class="btn" id="d-agregar">Registrar docente</button>
+      </div>
+
+      <div class="card">
+        <h3>Listado (<span id="d-count"></span>) — orden alfabético automático</h3>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Docente</th><th>No. Empleado</th><th>Grado académico</th><th>Correo</th><th>Fecha de registro</th><th>Tesis asignadas</th><th></th></tr></thead>
+          <tbody id="d-tbody"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <div class="section" id="sec-actividad">
+      <h2>Actividad Docente</h2>
+      <p class="lede">Tesis de cada docente clasificadas por cargo, tipo de grado y año. Pica cualquier número para ver las tesis que lo forman, con su fecha y su consecutivo dentro de ese cargo.</p>
+      <div class="card">
+        <div class="row3">
+          <div class="field"><label>Tipo de grado</label><select id="act-grado"><option value="all">Todos</option><option>Licenciatura</option><option>Maestría</option><option>Doctorado</option></select></div>
+          <div class="field"><label>Año</label><select id="act-anio"></select></div>
+          <div></div>
+        </div>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Docente</th><th>Director(a)</th><th>Asesor(a)/Revisor(a)</th><th>Licenciatura</th><th>Maestría</th><th>Doctorado</th><th>Total</th></tr></thead>
+          <tbody id="act-tbody"></tbody>
+        </table></div>
+      </div>
+      <div id="act-detalle"></div>
+    </div>
+
+    <div class="section" id="sec-bd">
+      <h2>Base de Datos</h2>
+      <p class="lede">Se actualiza sola con cada alta, edición o baja, con las mismas columnas de tu hoja actual. El No. de Tesis siempre queda del 1 en adelante sin saltos, aunque se borren registros intermedios.</p>
+      <div class="readonly-note">🔒 Modo de solo lectura: puedes consultar todos los registros, pero no borrarlos.</div>
+      <div class="stat-row">
+        <div class="stat"><div class="num" id="s-tesis">0</div><div class="lab">Tesis registradas</div></div>
+        <div class="stat"><div class="num" id="s-const">0</div><div class="lab">Renglones / Folios</div></div>
+        <div class="stat"><div class="num" id="s-alum">0</div><div class="lab">Alumnos</div></div>
+        <div class="stat"><div class="num" id="s-doc">0</div><div class="lab">Docentes activos</div></div>
+      </div>
+      <div class="card">
+        <div class="tablewrap"><table>
+          <thead><tr>
+            <th>No.</th><th>Folio</th><th>Alumno</th><th>Grado</th><th>Título Tesis</th><th>Fecha Elab.</th>
+            <th>Docente</th><th>Fungió</th><th>Consec. cargo</th><th>Fecha asig.</th><th>Punto</th><th>Ciudad</th><th>No. Tesis</th>
+            <th>Capturó</th><th>Fecha Captura</th><th>Archivo</th><th>Digital</th><th>Programa</th><th>No. Empleado</th><th>Observaciones</th><th>Documentos</th><th></th>
+          </tr></thead>
+          <tbody id="bd-tbody"></tbody>
+        </table></div>
+      </div>
+      <div id="bd-docs"></div>
+    </div>
+
+    <div class="section" id="sec-busqueda">
+      <h2>Búsqueda</h2>
+      <p class="lede">Busca por alumno, docente, folio o título sobre toda la Base de Datos.</p>
+      <div class="card">
+        <div class="field"><label>Buscar</label><input id="bu-q" placeholder="Escribe un nombre, folio o palabra del título…"></div>
+        <div class="tablewrap"><table>
+          <thead><tr><th>No.</th><th>Folio</th><th>Alumno</th><th>Grado</th><th>Título Tesis</th><th>Docente</th><th>Fungió</th><th>No. Tesis</th></tr></thead>
+          <tbody id="bu-tbody"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <div class="section" id="sec-constancias">
+      <h2>Generación de Constancias</h2>
+      <p class="lede">Cubre Constancia Individual, 3.3.1 y 3.3.3, y 3.3.2 con la misma pantalla — solo cambia el filtro de Punto. El número de empleado y el grado del docente se toman en vivo desde Docentes; el grado del alumno queda protegido pero es editable con un clic.</p>
+      <div class="readonly-note">🔒 Como usuario de solo lectura puedes consultar y generar constancias, pero no corregir el grado del alumno.</div>
+
+      <div class="filterrow" id="c-modorow"></div>
+      <div class="card" id="c-card-ind">
+        <h3>Seleccionar registro</h3>
+        <div class="filterrow" id="c-filterrow"></div>
+        <div class="field"><label>Folio de la base de datos</label><select id="c-folio"></select></div>
+        <div id="c-preview"></div>
+      </div>
+      <div id="c-letterwrap"></div>
+
+      <div class="card" id="c-card-var">
+        <h3>Constancia de varias tesis (concentrado)</h3>
+        <div class="row3">
+          <div class="field"><label>Docente</label><select id="cc-doc"></select></div>
+          <div class="field"><label>Cargo</label><select id="cc-cargo"><option value="ALL">Todos</option><option value="DIR">Director(a)</option><option value="ASE">Asesor(a)/Revisor(a)</option></select></div>
+          <div class="field"><label>Tipo de grado</label><select id="cc-grado"><option value="all">Todos</option><option>Licenciatura</option><option>Maestría</option><option>Doctorado</option></select></div>
+        </div>
+        <div class="row4">
+          <div class="field"><label>Desde (mes/año) — vacío = sin límite</label><input id="cc-desde" type="month"></div>
+          <div class="field"><label>Hasta (mes/año) — vacío = sin límite</label><input id="cc-hasta" type="month"></div>
+          <div class="field"><label>Dirigida a (captura manual)</label><input id="cc-dest" placeholder="Ej. Dr. Nombre Apellido, Director de RH"></div>
+          <div class="field"><label>Fecha de emisión</label><input id="cc-fecha" type="date"></div>
+        </div>
+        <div class="note">Para un año completo elige enero a diciembre; para todos los años deja Desde y Hasta vacíos.</div>
+        <button class="btn" id="cc-generar" style="margin-top:14px;">Generar concentrado</button>
+      </div>
+      <div id="cc-letter"></div>
+    </div>
+
+    <div class="section" id="sec-historial">
+      <h2>Historial de documentos emitidos</h2>
+      <p class="lede">Cada oficio o constancia que se genera queda registrado aquí con su fecha de emisión, a quién va dirigido y de qué docente es.</p>
+      <div class="card"><div class="tablewrap"><table>
+        <thead><tr><th>Fecha de emisión</th><th>Tipo</th><th>Dirigido a</th><th>Docente</th><th>Detalle</th></tr></thead>
+        <tbody id="hi-tbody"></tbody></table></div></div>
+    </div>
+
+    <div class="section" id="sec-asignacion">
+      <h2>BD Asignación Asesor / Oficio de Asignación</h2>
+      <p class="lede">Muestra quién dirige cada tesis (BD Asignación Asesor) y genera el oficio de asignación de director/asesor para firma, con folio y datos tomados del mismo expediente.</p>
+      <div class="card">
+        <h3>Directores/asesores asignados</h3>
+        <div class="field" style="max-width:240px;"><label>Fecha de emisión del oficio</label><input id="as-fecha" type="date"></div>
+        <div class="tablewrap"><table>
+          <thead><tr><th>No. Tesis</th><th>Alumno</th><th>Grado</th><th>Director/a asignado/a</th><th>No. Empleado</th><th>Fecha de asignación</th><th></th></tr></thead>
+          <tbody id="as-tbody"></tbody>
+        </table></div>
+      </div>
+      <div id="as-oficiowrap"></div>
+    </div>
+
+  </div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
