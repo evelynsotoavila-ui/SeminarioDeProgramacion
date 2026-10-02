@@ -134,15 +134,10 @@ body{ background:#F2F0E9; font-size:14px; line-height:1.45; -webkit-font-smoothi
 .rolebtn:hover{ color:#fff; }
 
 .rail{ width:206px; background:linear-gradient(180deg,#2C3B5E,#1E2A47); padding:14px 10px 24px; border-right:none; }
-.tab{ display:flex; align-items:center; gap:11px; border-left:none; border-radius:9px; margin-bottom:3px; padding:10px 13px; font-size:13px; transition:.15s; }
+.tab{ display:flex; align-items:center; border-left:none; border-radius:9px; margin-bottom:3px; padding:10px 13px; font-size:13px; transition:.15s; }
 .tab .n{ display:none; }
-.tab::before{ font-size:15px; width:20px; text-align:center; }
 .tab:hover{ background:rgba(255,255,255,.09); color:#fff; }
 .tab.active{ background:var(--paper); color:var(--navy); font-weight:600; box-shadow:0 2px 8px rgba(0,0,0,.18); }
-.tab[data-tab=inicio]::before{content:'🏠'} .tab[data-tab=registro]::before{content:'📝'} .tab[data-tab=alumnos]::before{content:'🎓'}
-.tab[data-tab=docentes]::before{content:'👩‍🏫'} .tab[data-tab=actividad]::before{content:'📊'} .tab[data-tab=bd]::before{content:'🗂️'}
-.tab[data-tab=busqueda]::before{content:'🔎'} .tab[data-tab=constancias]::before{content:'📜'} .tab[data-tab=asignacion]::before{content:'✉️'}
-.tab[data-tab=historial]::before{content:'🕘'}
 
 .sheet{ padding:34px 40px 90px; }
 .sheet > .section > h2{ font-size:28px; letter-spacing:-.2px; padding-bottom:12px; margin-bottom:4px; position:relative; }

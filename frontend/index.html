@@ -74,7 +74,8 @@
         <button class="menubtn" data-go="busqueda">BUSQUEDA</button>
         <button class="menubtn" data-go="actividad">ACTIVIDAD DOCENTE</button>
         <button class="menubtn" data-go="constancias" data-punto="individual">CONSTANCIA INDIVIDUAL</button>
-        <button class="menubtn" data-go="constancias" data-punto="3.3.1">CONSTANCIA 3.3.1 y 3.3.3</button>
+        <button class="menubtn" data-go="constancias" data-punto="3.3.1">CONSTANCIA 3.3.1</button>
+        <button class="menubtn" data-go="constancias" data-punto="3.3.3">CONSTANCIA 3.3.3</button>
         <button class="menubtn" data-go="constancias" data-punto="3.3.2">CONSTANCIA 3.3.2</button>
         <button class="menubtn" data-go="asignacion" data-modo="bd">BD ASIGNACIÓN ASESOR</button>
         <button class="menubtn" data-go="asignacion" data-modo="oficio">OFICIO ASIGNACIÓN</button>
@@ -251,14 +252,14 @@
 
     <div class="section" id="sec-constancias">
       <h2>Generación de Constancias</h2>
-      <p class="lede">Cubre Constancia Individual, 3.3.1 y 3.3.3, y 3.3.2 con la misma pantalla — solo cambia el filtro de Punto. El número de empleado y el grado del docente se toman en vivo desde Docentes; el grado del alumno queda protegido pero es editable con un clic.</p>
+      <p class="lede">Cubre Constancia Individual, 3.3.1, 3.3.3 y 3.3.2 con la misma pantalla — solo cambia el filtro de Punto. El número de empleado y el grado del docente se toman en vivo desde Docentes; el grado del alumno queda protegido pero es editable con un clic.</p>
       <div class="readonly-note">🔒 Como usuario de solo lectura puedes consultar y generar constancias, pero no corregir el grado del alumno.</div>
 
       <div class="filterrow" id="c-modorow"></div>
       <div class="card" id="c-card-ind">
         <h3>Seleccionar registro</h3>
         <div class="filterrow" id="c-filterrow"></div>
-        <div class="field"><label>Folio de la base de datos</label><select id="c-folio"></select></div>
+        <div class="field"><label>Registro</label><select id="c-folio"></select></div>
         <div id="c-preview"></div>
       </div>
       <div id="c-letterwrap"></div>

@@ -7,7 +7,6 @@ let authMode = 'login';
 let alumnos = [];
 let docentes = [];
 let expedientes = [];
-let nextFolio = 1875;
 let emitidos = [];
 const DOC_TIPOS=['Tesis (texto final)','Acta de examen','Oficio','Constancia','Otro'];
 
@@ -36,7 +35,7 @@ async function loadAll(){
   alumnos = a.data.map(mapAlumno);
   docentes = d.data.map(mapDocente);
   const docsBy = {}, filesBy = {};
-  td.data.forEach(row=>{ (docsBy[row.tesis_id] ||= []).push({ id:row.id, nombre:row.docente_nombre, fungio:row.fungio, fecha:row.fecha||'', folio:row.folio }); });
+  td.data.forEach(row=>{ (docsBy[row.tesis_id] ||= []).push({ id:row.id, nombre:row.docente_nombre, fungio:row.fungio, fecha:row.fecha||'', folio:row.folio||'', punto:row.punto||'' }); });
   docs.data.forEach(row=>{ (filesBy[row.tesis_id] ||= []).push({ id:row.id, tipo:row.tipo, nombre:row.nombre, size:Number(row.size)||0, fecha:row.fecha||'', url:row.url||'', storage_path:row.storage_path||'' }); });
   expedientes = t.data.map(row=>({
     id:row.id, alumno:row.alumno_nombre, grado:row.grado, titulo:row.titulo, fecha:row.fecha||'',
@@ -45,8 +44,6 @@ async function loadAll(){
     docs:docsBy[row.id]||[], documentos:filesBy[row.id]||[]
   }));
   emitidos = em.data.map(row=>({ id:row.id, fecha:row.fecha||'', tipo:row.tipo, dest:row.dest, docente:row.docente, detalle:row.detalle }));
-  const maxFolio = td.data.reduce((m,r)=>Math.max(m, r.folio||0), 1874);
-  nextFolio = maxFolio + 1;
 }
 async function saveEmitido(row){
   if (!needSb()) return false;
@@ -74,8 +71,10 @@ const mesTxt=m=>{ if(!m) return ''; const [y,mm]=m.split('-'); return MESES[+mm-
 const fechaLarga=iso=>(iso?new Date(iso+'T12:00:00'):new Date()).toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
 const fmtSize=b=>b>1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';
 function cargoTxt(f,nombre){ const fem=(getDocente(nombre)||{}).sexo==='F'; return isDir(f)?(fem?'directora':'director'):(fem?'asesora/revisora':'asesor/revisor'); }
+function puntoDe(r){ return (r.d && r.d.punto) || r.e.punto || ''; }
+function folioTxt(f){ return f ? String(f) : '—'; }
 function consecutivos(){ const m={}, c={};
-  flatRows().slice().sort((a,b)=>a.e.fecha.localeCompare(b.e.fecha)||a.d.folio-b.d.folio).forEach(r=>{ const k=r.d.nombre+'|'+cargoKey(r.d.fungio); c[k]=(c[k]||0)+1; m[r.d.folio]=c[k]; });
+  flatRows().slice().sort((a,b)=>a.e.fecha.localeCompare(b.e.fecha)||((a.d.folio||0)-(b.d.folio||0))).forEach(r=>{ const k=r.d.nombre+'|'+cargoKey(r.d.fungio); c[k]=(c[k]||0)+1; m[r.d.id]=c[k]; });
   return m; }
 function pad4(n){ return String(n).padStart(4,'0'); }
 function flatRows(){ const rows=[]; expedientes.forEach((e,ei)=>e.docs.forEach((d,di)=>rows.push({e,ei,d,di}))); return rows.sort((a,b)=>a.d.folio-b.d.folio); }
@@ -124,7 +123,7 @@ function renderGradoRow(){
     b.addEventListener('click', ()=>{
       rGradoSel = b.dataset.g;
       const n = GRADOS.find(g=>g.v===rGradoSel).n;
-      rSlots = Array.from({length:n}, ()=>({nombre:'', fungio:'', fecha:today()}));
+      rSlots = Array.from({length:n}, ()=>({nombre:'', fungio:'', fecha:today(), folio:''}));
       renderGradoRow(); renderDocSlots();
       toast(`Grado: ${rGradoSel} — se muestran ${n} campos de docente`);
     });
@@ -139,7 +138,7 @@ function renderDocSlots(){
   if(!rGradoSel){ wrap.innerHTML = `<p class="lede" style="margin:0;">Elige un grado para mostrar los campos de docente correspondientes.</p>`; return; }
   wrap.innerHTML = rSlots.map((s,i)=>`
     <div class="docslot"><span class="tag">Docente ${i+1}</span>
-      <div class="row3">
+      <div class="row4">
         <div class="field autowrap" style="margin-bottom:0;"><label>Nombre</label>
           <input class="doc-input" data-i="${i}" autocomplete="off" placeholder="Escribe para buscar…" value="${s.nombre}">
           <div class="suggestions" id="sugg-${i}"></div>
@@ -148,6 +147,7 @@ function renderDocSlots(){
           <select class="doc-fungio" data-i="${i}"><option value="">Selecciona…</option>${FUNGIO_OPTS.map(o=>`<option ${s.fungio===o?'selected':''}>${o}</option>`).join('')}</select>
         </div>
         <div class="field" style="margin-bottom:0;"><label>Fecha de asignación</label><input type="date" class="doc-fecha" data-i="${i}" value="${s.fecha||''}"></div>
+        <div class="field" style="margin-bottom:0;"><label>Folio</label><input class="doc-folio" data-i="${i}" inputmode="numeric" placeholder="Escríbelo" value="${s.folio||''}"></div>
       </div><small class="synctag" id="hint-${i}" style="display:block;margin-top:8px;"></small></div>`).join('');
   wrap.querySelectorAll('.doc-input').forEach(inp=>{
     const i = +inp.dataset.i; const sugg = document.getElementById('sugg-'+i);
@@ -162,6 +162,7 @@ function renderDocSlots(){
     inp.addEventListener('blur', ()=> setTimeout(()=>sugg.classList.remove('show'), 150));
   });
   wrap.querySelectorAll('.doc-fecha').forEach(f=>f.addEventListener('change',()=>{ rSlots[+f.dataset.i].fecha=f.value; }));
+  wrap.querySelectorAll('.doc-folio').forEach(f=>f.addEventListener('input',()=>{ rSlots[+f.dataset.i].folio=f.value; }));
   wrap.querySelectorAll('.doc-fungio').forEach(sel=>sel.addEventListener('change', ()=>{ rSlots[+sel.dataset.i].fungio = sel.value; updateHint(+sel.dataset.i); }));
 }
 (function(){
@@ -211,9 +212,10 @@ document.getElementById('r-guardar').addEventListener('click', async ()=>{
     if(tesisIns.error) throw tesisIns.error;
     tesisId = tesisIns.data.id;
     const slots = rSlots.filter(s=>s.nombre.trim());
+    const punto = document.getElementById('r-punto').value;
     for (const s of slots) {
-      const folioRes = await sb.rpc('next_folio');
-      if(folioRes.error) throw folioRes.error;
+      const escrito = String(s.folio||'').trim();
+      if(escrito && !/^\d+$/.test(escrito)) throw new Error('El folio debe ser un número.');
       const doc = getDocente(s.nombre.trim());
       const rowIns = await sb.from('tesis_docentes').insert({
         tesis_id: tesisId,
@@ -221,7 +223,8 @@ document.getElementById('r-guardar').addEventListener('click', async ()=>{
         docente_nombre: s.nombre.trim(),
         fungio: s.fungio || FUNGIO_OPTS[1],
         fecha: dateOrNull(s.fecha || today()),
-        folio: folioRes.data
+        folio: escrito ? Number(escrito) : null,
+        punto
       });
       if(rowIns.error) throw rowIns.error;
     }
@@ -229,7 +232,7 @@ document.getElementById('r-guardar').addEventListener('click', async ()=>{
       if (doc.file) await uploadDoc(tesisId, doc.file, doc.tipo, doc.fecha);
     }
     await loadAll();
-    toast(`Tesis guardada — No. de Tesis ${expedientes.length}, ${slots.length} folio(s) generado(s)`);
+    toast(`Tesis guardada — No. de Tesis ${expedientes.length}`);
     resetRegistro();
   } catch (err) {
     if (tesisId) await sb.from('tesis').delete().eq('id', tesisId);
@@ -379,7 +382,7 @@ function showDetalle(di,c,gr){
   const box=document.getElementById('act-detalle');
   box.innerHTML=`<div class="card"><h3>${d.nombre} — ${t} (${list.length})</h3><div class="tablewrap"><table>
     <thead><tr><th>Consec. cargo</th><th>Fecha</th><th>Alumno</th><th>Tipo de grado</th><th>Cargo</th><th>Título</th><th>Folio</th></tr></thead>
-    <tbody>${list.map(r=>`<tr><td><b>#${cons[r.d.folio]}</b></td><td>${r.e.fecha}</td><td>${r.e.alumno}</td><td>${pillGrado(r.e.grado)}</td><td>${r.d.fungio}</td><td style="max-width:280px;">${r.e.titulo}</td><td>${r.d.folio}</td></tr>`).join('')}</tbody></table></div></div>`;
+    <tbody>${list.map(r=>`<tr><td><b>#${cons[r.d.id]}</b></td><td>${r.e.fecha}</td><td>${r.e.alumno}</td><td>${pillGrado(r.e.grado)}</td><td>${r.d.fungio}</td><td style="max-width:280px;">${r.e.titulo}</td><td>${folioTxt(r.d.folio)}</td></tr>`).join('')}</tbody></table></div></div>`;
   box.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 document.getElementById('act-grado').addEventListener('change',renderActividad);
@@ -396,9 +399,9 @@ function renderBD(){
     const docente = getDocente(r.d.nombre);
     const noTesis = expedientes.indexOf(r.e)+1;
     return `<tr>
-      <td>${pad4(i+1)}</td><td>${r.d.folio}</td><td>${r.e.alumno}</td><td>${pillGrado(r.e.grado)}</td>
+      <td>${pad4(i+1)}</td><td>${folioTxt(r.d.folio)}</td><td>${r.e.alumno}</td><td>${pillGrado(r.e.grado)}</td>
       <td style="max-width:220px;">${r.e.titulo}</td><td>${r.e.fecha}</td>
-      <td>${r.d.nombre}</td><td>${r.d.fungio}</td><td><b>#${cons[r.d.folio]}</b></td><td>${r.d.fecha||'—'}</td><td style="font-size:11px;">${r.e.punto}</td><td>${r.e.ciudad}</td>
+      <td>${r.d.nombre}</td><td>${r.d.fungio}</td><td><b>#${cons[r.d.id]}</b></td><td>${r.d.fecha||'—'}</td><td style="font-size:11px;">${puntoDe(r)}</td><td>${r.e.ciudad}</td>
       <td>${noTesis}</td><td>${r.e.capturo||'—'}</td><td>${r.e.fechacap||'—'}</td>
       <td>${pillSN(r.e.archivo)}</td><td>${pillSN(r.e.digital)}</td><td>${r.e.programa}</td>
       <td>${docente?docente.empleado:'—'}</td><td style="max-width:160px;">${r.e.obs||'—'}</td><td><a class="numlink bd-docs-open" data-ei="${r.ei}">${(r.e.documentos||[]).length}</a></td>
@@ -455,7 +458,7 @@ function renderBusqueda(){
   const rows = flatRows().filter(r=> !q || norm(r.e.alumno).includes(q) || norm(r.d.nombre).includes(q) || norm(r.e.titulo).includes(q) || String(r.d.folio).includes(q));
   document.getElementById('bu-tbody').innerHTML = rows.map(r=>{
     const noTesis = expedientes.indexOf(r.e)+1;
-    return `<tr><td>${pad4(flatRows().indexOf(r)+1)}</td><td>${r.d.folio}</td><td>${r.e.alumno}</td><td>${pillGrado(r.e.grado)}</td><td style="max-width:260px;">${r.e.titulo}</td><td>${r.d.nombre}</td><td>${r.d.fungio}</td><td>${noTesis}</td></tr>`;
+    return `<tr><td>${pad4(flatRows().indexOf(r)+1)}</td><td>${folioTxt(r.d.folio)}</td><td>${r.e.alumno}</td><td>${pillGrado(r.e.grado)}</td><td style="max-width:260px;">${r.e.titulo}</td><td>${r.d.nombre}</td><td>${r.d.fungio}</td><td>${noTesis}</td></tr>`;
   }).join('') || `<tr><td colspan="8" style="color:var(--ink-soft);">Sin resultados.</td></tr>`;
 }
 document.getElementById('bu-q').addEventListener('input', renderBusqueda);
@@ -465,33 +468,35 @@ window._constPuntoFilter = 'todos';
 function renderConstFilters(){
   const opts = [
     {v:'todos', l:'Todos'},{v:'individual', l:'Individual'},
-    {v:'3.3.1', l:'3.3.1 y 3.3.3'},{v:'3.3.2', l:'3.3.2'}
+    {v:'3.3.1', l:'3.3.1'},{v:'3.3.3', l:'3.3.3'},{v:'3.3.2', l:'3.3.2'}
   ];
   document.getElementById('c-filterrow').innerHTML = opts.map(o=>`<button class="filterbtn ${window._constPuntoFilter===o.v?'sel':''}" data-v="${o.v}">${o.l}</button>`).join('');
   document.querySelectorAll('#c-filterrow .filterbtn').forEach(b=>b.addEventListener('click', ()=>{ window._constPuntoFilter=b.dataset.v; renderConstFilters(); renderConstanciasSelect(); }));
 }
-function matchesConstFilter(e){
+function matchesConstFilter(r){
   const f = window._constPuntoFilter;
   if(f==='todos') return true;
-  if(f==='individual') return e.programa==='Individual';
-  if(f==='3.3.1') return e.punto.startsWith('3.3.1') || e.punto.startsWith('3.3.3');
-  if(f==='3.3.2') return e.punto.startsWith('3.3.2');
+  if(f==='individual') return r.e.programa==='Individual';
+  const p = puntoDe(r);
+  if(f==='3.3.1') return p.startsWith('3.3.1');
+  if(f==='3.3.3') return p.startsWith('3.3.3');
+  if(f==='3.3.2') return p.startsWith('3.3.2');
   return true;
 }
 function renderConstanciasSelect(){
   const sel = document.getElementById('c-folio');
-  const rows = flatRows().filter(r=>matchesConstFilter(r.e));
-  sel.innerHTML = `<option value="">Selecciona un folio…</option>` + rows.map(r=>`<option value="${r.d.folio}">Folio ${r.d.folio} — ${r.e.alumno} (${r.d.nombre.split(',')[0]}, ${r.d.fungio})</option>`).join('');
-  sel.onchange = ()=>renderConstanciaPreview(+sel.value);
+  const rows = flatRows().filter(matchesConstFilter);
+  sel.innerHTML = `<option value="">Selecciona un registro…</option>` + rows.map(r=>`<option value="${r.d.id}">${r.d.folio ? 'Folio '+r.d.folio : 'Sin folio'} — ${r.e.alumno} (${r.d.nombre.split(',')[0]}, ${r.d.fungio})</option>`).join('');
+  sel.onchange = ()=>renderConstanciaPreview(sel.value);
   document.getElementById('c-preview').innerHTML=''; document.getElementById('c-letterwrap').innerHTML='';
 }
-function renderConstanciaPreview(folio){
-  const found = flatRows().find(r=>r.d.folio===folio);
+function renderConstanciaPreview(id){
+  const found = flatRows().find(r=>r.d.id===id);
   const box = document.getElementById('c-preview'), letterBox = document.getElementById('c-letterwrap');
   if(!found){ box.innerHTML=''; letterBox.innerHTML=''; return; }
   const {e,d} = found, docente = getDocente(d.nombre), noTesis = expedientes.indexOf(e)+1;
   box.innerHTML = `
-    <div class="row2"><div class="field"><label>No. de Tesis</label><input value="${noTesis}" disabled></div><div class="field"><label>Folio (autogenerado)</label><input value="${d.folio}" disabled></div></div>
+    <div class="row2"><div class="field"><label>No. de Tesis</label><input value="${noTesis}" disabled></div><div class="field"><label>Folio</label><input id="c-folio-manual" inputmode="numeric" placeholder="Escríbelo" value="${d.folio||''}"></div></div>
     <div class="row2"><div class="field"><label>Alumno</label><input value="${e.alumno}" disabled></div>
       <div class="field"><label>Grado del alumno</label><div class="lockrow">
         <input id="c-grado-input" value="${e.grado}" disabled><span class="synctag locked" id="c-lock-tag">🔒 protegido</span>
@@ -517,14 +522,36 @@ function renderConstanciaPreview(folio){
     }, {once:true});
   });
   document.getElementById('c-generar').addEventListener('click', async ()=>{
-    const dest=(document.getElementById('c-dest').value.trim()||'A QUIEN CORRESPONDA'), cons=consecutivos(), fe=document.getElementById('c-fecha').value||today();
-    const ok = await saveEmitido({fecha:fe,tipo:'Constancia individual',dest,docente:d.nombre,detalle:e.alumno+' — Folio '+d.folio});
+    const fe=document.getElementById('c-fecha').value||today();
+    const escrito=document.getElementById('c-folio-manual').value.trim();
+    if(escrito && !/^\d+$/.test(escrito)){ toast('El folio debe ser un número.'); return; }
+    const folioNum=escrito?Number(escrito):null;
+    if(d.id && String(d.folio||'')!==escrito){
+      const upd=await sb.from('tesis_docentes').update({ folio: folioNum }).eq('id', d.id);
+      if(upd.error){ toast(upd.error.message); return; }
+      d.folio=escrito;
+    }
+    const fem=(docente||{}).sexo==='F';
+    const cargo=isDir(d.fungio)?(fem?'DIRECTORA':'DIRECTOR'):(fem?'REVISORA':'REVISOR');
+    const art=fem?'la docente':'el docente';
+    const ref=puntoDe(found)||'';
+    const es332=ref.startsWith('3.3.2');
+    const [y,m]=(e.fecha||'').split('-');
+    const fechaConcl=m?(MESES[+m-1].charAt(0).toUpperCase()+MESES[+m-1].slice(1)+' '+y):(e.fecha||'');
+    const folioLinea=escrito||'No se ha asignado ningún folio';
+    const ok = await saveEmitido({fecha:fe,tipo:'Constancia '+ref,dest:'LAG. LUIS FERNANDO RUIZ ROCHA',docente:d.nombre,detalle:e.alumno+' — '+ref});
     if(!ok) return;
-    letterBox.innerHTML = `<div class="letter"><div class="folio">Folio No. ${d.folio} · Chihuahua, Chih., a ${fechaLarga(fe)}</div>
-      <p><b>${dest}</b><br>P R E S E N T E.-</p>
-      <p>Por medio de la presente se hace constar que <b>${docente?docente.nombre:d.nombre}</b> (No. de empleado ${docente?docente.empleado:'—'}, grado académico ${docente?docente.grado:'—'}) particip&oacute; como <b>${cargoTxt(d.fungio,d.nombre)}</b> en el trabajo de tesis de <b>${e.grado}</b>
-      titulado &ldquo;${e.titulo}&rdquo;, elaborado por <b>${e.alumno}</b>, con No. de Tesis <b>${noTesis}</b>, de fecha ${e.fecha}, en la ciudad de ${e.ciudad}. Corresponde a su tesis No. ${cons[d.folio]} en ese cargo.</p>
-      <p>Sin otro particular, quedo de usted.</p><p style="margin-top:30px;">A T E N T A M E N T E</p></div>`;
+    letterBox.innerHTML = `<div class="letter">
+      <div class="folio"><div>REFERENCIA:</div><b>${ref}</b><div>${folioLinea}</div><div>Asunto: Constancia</div><div>Chihuahua, Chih., a ${fechaLarga(fe)}</div></div>
+      <p><b>LAG. LUIS FERNANDO RUIZ ROCHA<br>REPRESENTANTE INSTITUCIONAL ANTE EL PRODEP<br>PRESENTE.-</b></p>
+      <p>La que suscribe SECRETARIA DE INVESTIGACIÓN Y POSGRADO de la FACULTAD DE CONTADURÍA Y ADMINISTRACIÓN de la Universidad Autónoma de Chihuahua hace CONSTAR que ${art} <b>${docente?docente.nombre:d.nombre}</b>, con número de empleado ${docente?docente.empleado:'—'} participó como <b>${cargo}</b> de la siguiente Tesis, el cual es requisito de titulación.</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Nombre del alumno</th><th>${es332?'Nivel':'Grado y programa educativo'}</th><th>${es332?'Título de la tesis':'Título de tesis'}</th><th>Fecha de conclusión</th></tr></thead>
+        <tbody><tr><td>${e.alumno}</td><td>${e.grado}</td><td>${e.titulo}</td><td>${fechaConcl}</td></tr></tbody>
+      </table></div>
+      <p style="text-align:center;margin-top:28px;"><b>ATENTAMENTE</b><br>&ldquo;LUCHAR PARA LOGRAR, LOGRAR PARA DAR&rdquo;</p>
+      <p style="text-align:center;margin-top:36px;"><b>M.A.R.H. ERIKA NANCY RODRÍGUEZ QUINTANA</b><br>SECRETARIA DE INVESTIGACIÓN Y POSGRADO</p>
+    </div>`;
   });
 }
 
@@ -559,7 +586,7 @@ async function genConcentrado(){
     <p>Por medio de la presente se hace constar que <b>${d.nombre}</b> (No. de empleado ${d.empleado||'—'}, grado académico ${d.grado}) ha participado en <b>${rows.length}</b> trabajo(s) de tesis durante el periodo: ${periodo}; <b>${nd}</b> como director(a) y <b>${na}</b> como asesor(a)/revisor(a), conforme al siguiente concentrado:</p>
     <div class="tablewrap"><table style="font-family:'IBM Plex Sans';">
       <thead><tr><th>Consec. cargo</th><th>Fecha</th><th>Alumno</th><th>Grado</th><th>Título</th><th>Cargo</th></tr></thead>
-      <tbody>${rows.map(r=>`<tr><td>#${cons[r.d.folio]}</td><td>${r.e.fecha}</td><td>${r.e.alumno}</td><td>${r.e.grado}</td><td>${r.e.titulo}</td><td>${r.d.fungio}</td></tr>`).join('')}</tbody></table></div>
+      <tbody>${rows.map(r=>`<tr><td>#${cons[r.d.id]}</td><td>${r.e.fecha}</td><td>${r.e.alumno}</td><td>${r.e.grado}</td><td>${r.e.titulo}</td><td>${r.d.fungio}</td></tr>`).join('')}</tbody></table></div>
     <p>Sin otro particular, quedo de usted.</p><p style="margin-top:30px;">A T E N T A M E N T E</p></div>`;
 }
 
@@ -580,9 +607,10 @@ function renderAsignacion(){
   document.querySelectorAll('.oficio-btn').forEach(b=>b.addEventListener('click', async ()=>{
     const e = expedientes[+b.dataset.i]; const dir = e.docs.find(d=>d.fungio.startsWith('DIRECTOR')) || e.docs[0];
     const fe=document.getElementById('as-fecha').value||today();
-    const ok = await saveEmitido({fecha:fe,tipo:'Oficio de asignación',dest:dir.nombre,docente:dir.nombre,detalle:e.alumno+' — Folio '+dir.folio});
+    const folioOf=dir.folio?String(dir.folio):'No se ha asignado ningún folio';
+    const ok = await saveEmitido({fecha:fe,tipo:'Oficio de asignación',dest:dir.nombre,docente:dir.nombre,detalle:e.alumno+' — Folio '+folioOf});
     if(!ok) return;
-    document.getElementById('as-oficiowrap').innerHTML = `<div class="letter"><div class="folio">Folio No. ${dir.folio} · Chihuahua, Chih., a ${fechaLarga(fe)}</div>
+    document.getElementById('as-oficiowrap').innerHTML = `<div class="letter"><div class="folio">Folio No. ${folioOf} · Chihuahua, Chih., a ${fechaLarga(fe)}</div>
       <p><b>${dir.nombre}</b><br>P R E S E N T E.-</p>
       <p>Asignación de Director de Tesis</p>
       <p>Por este medio se le comunica su asignación como <b>${cargoTxt(dir.fungio,dir.nombre)}</b> del trabajo de tesis de <b>${e.alumno}</b>,
