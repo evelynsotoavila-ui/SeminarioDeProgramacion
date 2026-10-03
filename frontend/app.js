@@ -389,37 +389,191 @@ document.getElementById('act-grado').addEventListener('change',renderActividad);
 document.getElementById('act-anio').addEventListener('change',renderActividad);
 
 /* BD */
-function renderBD(){
-  const rows = flatRows();
-  const cons=consecutivos(); document.getElementById('s-tesis').textContent = expedientes.length;
-  document.getElementById('s-const').textContent = rows.length;
-  document.getElementById('s-alum').textContent = alumnos.length;
-  document.getElementById('s-doc').textContent = docentes.length;
-  document.getElementById('bd-tbody').innerHTML = rows.map((r,i)=>{
-    const docente = getDocente(r.d.nombre);
-    const noTesis = expedientes.indexOf(r.e)+1;
-    return `<tr>
-      <td>${pad4(i+1)}</td><td>${folioTxt(r.d.folio)}</td><td>${r.e.alumno}</td><td>${pillGrado(r.e.grado)}</td>
-      <td style="max-width:220px;">${r.e.titulo}</td><td>${r.e.fecha}</td>
-      <td>${r.d.nombre}</td><td>${r.d.fungio}</td><td><b>#${cons[r.d.id]}</b></td><td>${r.d.fecha||'—'}</td><td style="font-size:11px;">${puntoDe(r)}</td><td>${r.e.ciudad}</td>
-      <td>${noTesis}</td><td>${r.e.capturo||'—'}</td><td>${r.e.fechacap||'—'}</td>
-      <td>${pillSN(r.e.archivo)}</td><td>${pillSN(r.e.digital)}</td><td>${r.e.programa}</td>
-      <td>${docente?docente.empleado:'—'}</td><td style="max-width:160px;">${r.e.obs||'—'}</td><td><a class="numlink bd-docs-open" data-ei="${r.ei}">${(r.e.documentos||[]).length}</a></td>
-      <td><button class="btn ghost small del-exp admin-only" data-ei="${r.ei}">Borrar tesis</button></td>
-    </tr>`;
-  }).join('');
-  document.getElementById('bd-docs').innerHTML='';
-  document.querySelectorAll('.bd-docs-open').forEach(a=>a.addEventListener('click',()=>showDocsTesis(+a.dataset.ei)));
-  document.querySelectorAll('.del-exp').forEach(b=>b.addEventListener('click', async ()=>{
-    if(!needSb()) return;
-    const e = expedientes[+b.dataset.ei];
-    const { error } = await sb.from('tesis').delete().eq('id', e.id);
-    if(error){ toast(error.message); return; }
-    expedientes.splice(+b.dataset.ei,1);
-    toast('Tesis eliminada — los No. de Tesis se recorrieron automáticamente');
-    renderBD();
-  }));
+const BD_PAGE = 50;
+let bdReq = 0;
+const bdState = { ready:false, verTodo:false, inicio:'', fin:'', grado:'Todos', defInicio:'', defFin:'', rows:[], total:0 };
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+function bdStatus(msg, kind){
+  const el = document.getElementById('bd-folio-status');
+  el.textContent = msg || '';
+  el.className = kind === 'ok' ? 'ok' : kind === 'err' ? 'err' : '';
 }
+async function paintBdTotals(){
+  const [t, td, a, d] = await Promise.all([
+    sb.from('tesis').select('*', { count:'exact', head:true }),
+    sb.from('tesis_docentes').select('*', { count:'exact', head:true }),
+    sb.from('alumnos').select('*', { count:'exact', head:true }),
+    sb.from('docentes').select('*', { count:'exact', head:true })
+  ]);
+  document.getElementById('s-tesis').textContent = t.error ? expedientes.length : t.count;
+  document.getElementById('s-const').textContent = td.error ? flatRows().length : td.count;
+  document.getElementById('s-alum').textContent = a.error ? alumnos.length : a.count;
+  document.getElementById('s-doc').textContent = d.error ? docentes.length : d.count;
+}
+async function ensureBdDefaults(){
+  if (bdState.ready) return;
+  const { data, error } = await sb.from('tesis').select('fecha').not('fecha','is', null).order('fecha', { ascending:false }).limit(1);
+  let inicio = '', fin = '';
+  if (!error && data && data[0] && data[0].fecha) {
+    const [y, m] = data[0].fecha.split('-');
+    const last = new Date(Number(y), Number(m), 0).getDate();
+    inicio = `${y}-${m}-01`;
+    fin = `${y}-${m}-${String(last).padStart(2,'0')}`;
+  }
+  bdState.inicio = inicio;
+  bdState.fin = fin;
+  bdState.defInicio = inicio;
+  bdState.defFin = fin;
+  bdState.grado = 'Todos';
+  bdState.verTodo = !inicio;
+  bdState.ready = true;
+  document.getElementById('bd-desde').value = inicio;
+  document.getElementById('bd-hasta').value = fin;
+  document.getElementById('bd-grado').value = 'Todos';
+}
+function bdQuery(from, to){
+  let q = sb.from('tesis_docentes').select('id, docente_nombre, fungio, fecha, folio, punto, tesis_id, tesis!inner(id, alumno_nombre, grado, titulo, fecha, ciudad, programa, punto, capturo, archivo, digital, fecha_cap, obs)', { count:'exact' });
+  if (!bdState.verTodo && bdState.inicio) q = q.gte('tesis.fecha', bdState.inicio);
+  if (!bdState.verTodo && bdState.fin) q = q.lte('tesis.fecha', bdState.fin);
+  if (bdState.grado && bdState.grado !== 'Todos') q = q.eq('tesis.grado', bdState.grado);
+  return q.order('fecha', { referencedTable:'tesis', ascending:true }).order('folio', { ascending:true, nullsFirst:false }).range(from, to);
+}
+function paintBdTable(){
+  const cons = consecutivos();
+  const rows = bdState.rows;
+  document.getElementById('bd-count').textContent = `Mostrando ${rows.length} de ${bdState.total} registros`;
+  document.getElementById('bd-mas').hidden = rows.length >= bdState.total;
+  document.getElementById('bd-tbody').innerHTML = rows.length ? rows.map((row,i)=>{
+    const t = row.tesis || {};
+    const ei = expedientes.findIndex(e => e.id === t.id);
+    const exp = ei >= 0 ? expedientes[ei] : null;
+    const docente = getDocente(row.docente_nombre);
+    const folio = row.folio == null ? '' : String(row.folio);
+    const punto = row.punto || t.punto || '';
+    return `<tr>
+      <td><input class="bd-folio admin-only" data-id="${row.id}" data-prev="${esc(folio)}" value="${esc(folio)}" placeholder="—" inputmode="numeric"><span class="view-only">${folioTxt(folio)}</span></td>
+      <td>${esc(t.alumno_nombre)}</td><td>${pillGrado(t.grado)}</td>
+      <td style="max-width:220px;">${esc(t.titulo)}</td><td>${esc(t.fecha||'')}</td>
+      <td>${esc(row.docente_nombre)}</td><td>${esc(row.fungio)}</td><td><b>${cons[row.id] ? '#'+cons[row.id] : '—'}</b></td><td>${row.fecha||'—'}</td><td style="font-size:11px;">${esc(punto)}</td><td>${esc(t.ciudad||'')}</td>
+      <td>${ei >= 0 ? ei+1 : '—'}</td><td>${esc(t.capturo)||'—'}</td><td>${t.fecha_cap||'—'}</td>
+      <td>${pillSN(t.archivo)}</td><td>${pillSN(t.digital)}</td><td>${esc(t.programa||'')}</td>
+      <td>${docente ? docente.empleado : '—'}</td><td style="max-width:160px;">${esc(t.obs)||'—'}</td>
+      <td><a class="numlink bd-docs-open" data-tid="${t.id||''}">${exp && exp.documentos ? exp.documentos.length : 0}</a></td>
+      <td><button type="button" class="btn ghost small del-exp admin-only" data-tid="${t.id||''}">Borrar tesis</button></td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="21" style="color:var(--ink-soft);">No hay registros en este rango</td></tr>`;
+  document.querySelectorAll('.bd-folio').forEach(input=>{
+    input.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); input.blur(); } });
+    input.addEventListener('blur', ()=>saveBdFolio(input));
+  });
+  document.querySelectorAll('.bd-docs-open').forEach(a=>a.addEventListener('click', ()=>showDocsTesisById(a.dataset.tid)));
+  document.querySelectorAll('.del-exp').forEach(b=>b.addEventListener('click', ()=>deleteBdTesis(b.dataset.tid)));
+}
+async function bdLoad(reset){
+  const req = ++bdReq;
+  if (reset) bdState.rows = [];
+  const from = reset ? 0 : bdState.rows.length;
+  document.getElementById('bd-count').textContent = 'Cargando…';
+  const { data, error, count } = await bdQuery(from, from + BD_PAGE - 1);
+  if (req !== bdReq) return;
+  if (error) {
+    document.getElementById('bd-count').textContent = 'No se pudo cargar la tabla';
+    document.getElementById('bd-tbody').innerHTML = `<tr><td colspan="21" style="color:var(--brick);">${esc(error.message)}</td></tr>`;
+    document.getElementById('bd-mas').hidden = true;
+    return;
+  }
+  bdState.total = count || 0;
+  bdState.rows = reset ? (data || []) : bdState.rows.concat(data || []);
+  if (reset) document.getElementById('bd-docs').innerHTML = '';
+  paintBdTable();
+}
+async function renderBD(){
+  if (!needSb()) return;
+  paintBdTotals();
+  await ensureBdDefaults();
+  await bdLoad(true);
+}
+async function saveBdFolio(input){
+  const raw = input.value.trim();
+  if (raw === input.dataset.prev) return;
+  if (raw && !/^\d+$/.test(raw)) {
+    input.value = input.dataset.prev;
+    bdStatus('El folio debe ser un número.', 'err');
+    return;
+  }
+  const folio = raw ? Number(raw) : null;
+  bdStatus('guardando…');
+  const { error } = await sb.from('tesis_docentes').update({ folio }).eq('id', input.dataset.id);
+  if (error) {
+    input.value = input.dataset.prev;
+    const dup = error.code === '23505' || /duplicate|unique/i.test(error.message||'');
+    bdStatus(dup ? 'Ese folio ya está registrado.' : (error.message || 'No se pudo guardar el folio'), 'err');
+    return;
+  }
+  input.dataset.prev = raw;
+  const hit = bdState.rows.find(r => r.id === input.dataset.id);
+  if (hit) hit.folio = folio;
+  for (const e of expedientes) {
+    const d = e.docs.find(x => x.id === input.dataset.id);
+    if (d) { d.folio = raw; break; }
+  }
+  const span = input.parentElement.querySelector('.view-only');
+  if (span) span.textContent = folioTxt(raw);
+  bdStatus('guardado ✓', 'ok');
+}
+function showDocsTesisById(id){
+  const ei = expedientes.findIndex(e => e.id === id);
+  if (ei >= 0) showDocsTesis(ei);
+}
+async function deleteBdTesis(id){
+  if (!needSb() || !id) return;
+  const { error } = await sb.from('tesis').delete().eq('id', id);
+  if (error) { toast(error.message); return; }
+  const idx = expedientes.findIndex(e => e.id === id);
+  if (idx >= 0) expedientes.splice(idx, 1);
+  toast('Tesis eliminada — los No. de Tesis se recorrieron automáticamente');
+  await renderBD();
+}
+document.getElementById('bd-desde').addEventListener('change', ()=>{
+  bdState.verTodo = false;
+  bdState.inicio = document.getElementById('bd-desde').value;
+  bdState.fin = document.getElementById('bd-hasta').value;
+  bdStatus('');
+  bdLoad(true);
+});
+document.getElementById('bd-hasta').addEventListener('change', ()=>{
+  bdState.verTodo = false;
+  bdState.inicio = document.getElementById('bd-desde').value;
+  bdState.fin = document.getElementById('bd-hasta').value;
+  bdStatus('');
+  bdLoad(true);
+});
+document.getElementById('bd-grado').addEventListener('change', ()=>{
+  bdState.grado = document.getElementById('bd-grado').value;
+  bdStatus('');
+  bdLoad(true);
+});
+document.getElementById('bd-limpiar').addEventListener('click', ()=>{
+  bdState.verTodo = !bdState.defInicio;
+  bdState.inicio = bdState.defInicio;
+  bdState.fin = bdState.defFin;
+  bdState.grado = 'Todos';
+  document.getElementById('bd-desde').value = bdState.defInicio;
+  document.getElementById('bd-hasta').value = bdState.defFin;
+  document.getElementById('bd-grado').value = 'Todos';
+  bdStatus('');
+  bdLoad(true);
+});
+document.getElementById('bd-vertodo').addEventListener('click', ()=>{
+  bdState.verTodo = true;
+  bdState.inicio = '';
+  bdState.fin = '';
+  document.getElementById('bd-desde').value = '';
+  document.getElementById('bd-hasta').value = '';
+  bdStatus('');
+  bdLoad(true);
+});
+document.getElementById('bd-mas').addEventListener('click', ()=>bdLoad(false));
 
 function showDocsTesis(ei){
   const e=expedientes[ei]; e.documentos=e.documentos||[]; const box=document.getElementById('bd-docs');
@@ -436,8 +590,10 @@ function showDocsTesis(ei){
     try {
       const saved = await uploadDoc(e.id, f, document.getElementById('bd-tipo').value, document.getElementById('bd-fecha').value||today());
       e.documentos.push(saved);
+      await renderBD();
       const idx = expedientes.findIndex(x=>x.id===e.id);
-      renderBD(); showDocsTesis(idx); toast('Documento agregado');
+      if (idx >= 0) showDocsTesis(idx);
+      toast('Documento agregado');
     } catch (err) { toast(err.message || 'No se pudo subir el archivo'); }
   });
   box.querySelectorAll('.bd-doc-del').forEach(a=>a.addEventListener('click', async ()=>{
@@ -447,8 +603,9 @@ function showDocsTesis(ei){
     if(error){ toast(error.message); return; }
     if(x.storage_path) await sb.storage.from('documentos').remove([x.storage_path]);
     e.documentos.splice(+a.dataset.i,1);
+    await renderBD();
     const idx = expedientes.findIndex(t=>t.id===e.id);
-    renderBD(); showDocsTesis(idx);
+    if (idx >= 0) showDocsTesis(idx);
   }));
 }
 
@@ -458,8 +615,8 @@ function renderBusqueda(){
   const rows = flatRows().filter(r=> !q || norm(r.e.alumno).includes(q) || norm(r.d.nombre).includes(q) || norm(r.e.titulo).includes(q) || String(r.d.folio).includes(q));
   document.getElementById('bu-tbody').innerHTML = rows.map(r=>{
     const noTesis = expedientes.indexOf(r.e)+1;
-    return `<tr><td>${pad4(flatRows().indexOf(r)+1)}</td><td>${folioTxt(r.d.folio)}</td><td>${r.e.alumno}</td><td>${pillGrado(r.e.grado)}</td><td style="max-width:260px;">${r.e.titulo}</td><td>${r.d.nombre}</td><td>${r.d.fungio}</td><td>${noTesis}</td></tr>`;
-  }).join('') || `<tr><td colspan="8" style="color:var(--ink-soft);">Sin resultados.</td></tr>`;
+    return `<tr><td>${folioTxt(r.d.folio)}</td><td>${r.e.alumno}</td><td>${pillGrado(r.e.grado)}</td><td style="max-width:260px;">${r.e.titulo}</td><td>${r.d.nombre}</td><td>${r.d.fungio}</td><td>${noTesis}</td></tr>`;
+  }).join('') || `<tr><td colspan="7" style="color:var(--ink-soft);">Sin resultados.</td></tr>`;
 }
 document.getElementById('bu-q').addEventListener('input', renderBusqueda);
 
@@ -483,13 +640,7 @@ function matchesConstFilter(r){
   if(f==='3.3.2') return p.startsWith('3.3.2');
   return true;
 }
-function renderConstanciasSelect(){
-  const sel = document.getElementById('c-folio');
-  const rows = flatRows().filter(matchesConstFilter);
-  sel.innerHTML = `<option value="">Selecciona un registro…</option>` + rows.map(r=>`<option value="${r.d.id}">${r.d.folio ? 'Folio '+r.d.folio : 'Sin folio'} — ${r.e.alumno} (${r.d.nombre.split(',')[0]}, ${r.d.fungio})</option>`).join('');
-  sel.onchange = ()=>renderConstanciaPreview(sel.value);
-  document.getElementById('c-preview').innerHTML=''; document.getElementById('c-letterwrap').innerHTML='';
-}
+function renderConstanciasSelect(){}
 function renderConstanciaPreview(id){
   const found = flatRows().find(r=>r.d.id===id);
   const box = document.getElementById('c-preview'), letterBox = document.getElementById('c-letterwrap');
@@ -541,19 +692,43 @@ function renderConstanciaPreview(id){
     const folioLinea=escrito||'No se ha asignado ningún folio';
     const ok = await saveEmitido({fecha:fe,tipo:'Constancia '+ref,dest:'LAG. LUIS FERNANDO RUIZ ROCHA',docente:d.nombre,detalle:e.alumno+' — '+ref});
     if(!ok) return;
-    letterBox.innerHTML = `<div class="letter">
-      <div class="folio"><div>REFERENCIA:</div><b>${ref}</b><div>${folioLinea}</div><div>Asunto: Constancia</div><div>Chihuahua, Chih., a ${fechaLarga(fe)}</div></div>
+    letterBox.innerHTML = `<div id="constancia-print"><article class="letter carta">
+      <div class="folio"><div>REFERENCIA:</div><b>${esc(ref)}</b><div>${esc(folioLinea)}</div><div>Asunto: Constancia</div><div>Chihuahua, Chih., a ${fechaLarga(fe)}</div></div>
       <p><b>LAG. LUIS FERNANDO RUIZ ROCHA<br>REPRESENTANTE INSTITUCIONAL ANTE EL PRODEP<br>PRESENTE.-</b></p>
-      <p>La que suscribe SECRETARIA DE INVESTIGACIÓN Y POSGRADO de la FACULTAD DE CONTADURÍA Y ADMINISTRACIÓN de la Universidad Autónoma de Chihuahua hace CONSTAR que ${art} <b>${docente?docente.nombre:d.nombre}</b>, con número de empleado ${docente?docente.empleado:'—'} participó como <b>${cargo}</b> de la siguiente Tesis, el cual es requisito de titulación.</p>
-      <div class="tablewrap"><table>
+      <p>La que suscribe SECRETARIA DE INVESTIGACIÓN Y POSGRADO de la FACULTAD DE CONTADURÍA Y ADMINISTRACIÓN de la Universidad Autónoma de Chihuahua hace CONSTAR que ${art} <b>${esc(docente?docente.nombre:d.nombre)}</b>, con número de empleado ${docente?docente.empleado:'—'} participó como <b>${cargo}</b> de la siguiente Tesis, el cual es requisito de titulación.</p>
+      <table class="carta-table">
         <thead><tr><th>Nombre del alumno</th><th>${es332?'Nivel':'Grado y programa educativo'}</th><th>${es332?'Título de la tesis':'Título de tesis'}</th><th>Fecha de conclusión</th></tr></thead>
-        <tbody><tr><td>${e.alumno}</td><td>${e.grado}</td><td>${e.titulo}</td><td>${fechaConcl}</td></tr></tbody>
-      </table></div>
-      <p style="text-align:center;margin-top:28px;"><b>ATENTAMENTE</b><br>&ldquo;LUCHAR PARA LOGRAR, LOGRAR PARA DAR&rdquo;</p>
-      <p style="text-align:center;margin-top:36px;"><b>M.A.R.H. ERIKA NANCY RODRÍGUEZ QUINTANA</b><br>SECRETARIA DE INVESTIGACIÓN Y POSGRADO</p>
-    </div>`;
+        <tbody><tr><td>${esc(e.alumno)}</td><td>${esc(e.grado)}</td><td>${esc(e.titulo)}</td><td>${esc(fechaConcl)}</td></tr></tbody>
+      </table>
+      <div class="carta-cierre">
+        <p><b>ATENTAMENTE</b><br>&ldquo;LUCHAR PARA LOGRAR, LOGRAR PARA DAR&rdquo;</p>
+        <p class="carta-firma"><b>M.A.R.H. ERIKA NANCY RODRÍGUEZ QUINTANA</b><br>SECRETARIA DE INVESTIGACIÓN Y POSGRADO</p>
+      </div>
+    </article></div>
+    <button type="button" class="btn" id="c-descargar">Descargar</button>`;
+    document.getElementById('c-descargar').addEventListener('click', ()=>{
+      const prev = document.title;
+      document.title = ' ';
+      const restore = ()=>{ document.title = prev; window.removeEventListener('afterprint', restore); };
+      window.addEventListener('afterprint', restore);
+      window.print();
+    });
   });
 }
+function buscarConstancia(){
+  const raw = document.getElementById('c-buscar-folio').value.trim();
+  if(!raw || !/^\d+$/.test(raw)){ toast('Escribe el número de folio.'); return; }
+  const found = flatRows().find(r=>String(r.d.folio)===raw);
+  if(!found){
+    toast('No hay un registro con ese folio.');
+    document.getElementById('c-preview').innerHTML='';
+    document.getElementById('c-letterwrap').innerHTML='';
+    return;
+  }
+  renderConstanciaPreview(found.d.id);
+}
+document.getElementById('c-buscar').addEventListener('click', buscarConstancia);
+document.getElementById('c-buscar-folio').addEventListener('keydown', e=>{ if(e.key==='Enter') buscarConstancia(); });
 
 window._cModo='ind';
 function renderConstModo(){

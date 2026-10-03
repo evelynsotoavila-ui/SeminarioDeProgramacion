@@ -225,15 +225,30 @@
         <div class="stat"><div class="num" id="s-alum">0</div><div class="lab">Alumnos</div></div>
         <div class="stat"><div class="num" id="s-doc">0</div><div class="lab">Docentes activos</div></div>
       </div>
+      <div class="card bd-filtercard">
+        <div class="bd-filters">
+          <div class="field"><label>Fecha inicio</label><input id="bd-desde" type="date"></div>
+          <div class="field"><label>Fecha fin</label><input id="bd-hasta" type="date"></div>
+          <div class="field"><label>Grado</label>
+            <select id="bd-grado"><option value="Todos">Todos</option><option>Licenciatura</option><option>Maestría</option><option>Doctorado</option></select>
+          </div>
+          <div class="bd-actions">
+            <button type="button" class="btn ghost small" id="bd-limpiar">Limpiar filtros</button>
+            <button type="button" class="btn ghost small" id="bd-vertodo">Ver todo</button>
+          </div>
+        </div>
+        <div id="bd-meta"><span id="bd-count">Mostrando 0 de 0 registros</span><span id="bd-folio-status"></span></div>
+      </div>
       <div class="card">
         <div class="tablewrap"><table>
           <thead><tr>
-            <th>No.</th><th>Folio</th><th>Alumno</th><th>Grado</th><th>Título Tesis</th><th>Fecha Elab.</th>
+            <th>Folio</th><th>Alumno</th><th>Grado</th><th>Título Tesis</th><th>Fecha Elab.</th>
             <th>Docente</th><th>Fungió</th><th>Consec. cargo</th><th>Fecha asig.</th><th>Punto</th><th>Ciudad</th><th>No. Tesis</th>
             <th>Capturó</th><th>Fecha Captura</th><th>Archivo</th><th>Digital</th><th>Programa</th><th>No. Empleado</th><th>Observaciones</th><th>Documentos</th><th></th>
           </tr></thead>
           <tbody id="bd-tbody"></tbody>
         </table></div>
+        <button type="button" class="btn ghost" id="bd-mas" hidden>Cargar más</button>
       </div>
       <div id="bd-docs"></div>
     </div>
@@ -244,7 +259,7 @@
       <div class="card">
         <div class="field"><label>Buscar</label><input id="bu-q" placeholder="Escribe un nombre, folio o palabra del título…"></div>
         <div class="tablewrap"><table>
-          <thead><tr><th>No.</th><th>Folio</th><th>Alumno</th><th>Grado</th><th>Título Tesis</th><th>Docente</th><th>Fungió</th><th>No. Tesis</th></tr></thead>
+          <thead><tr><th>Folio</th><th>Alumno</th><th>Grado</th><th>Título Tesis</th><th>Docente</th><th>Fungió</th><th>No. Tesis</th></tr></thead>
           <tbody id="bu-tbody"></tbody>
         </table></div>
       </div>
@@ -259,7 +274,10 @@
       <div class="card" id="c-card-ind">
         <h3>Seleccionar registro</h3>
         <div class="filterrow" id="c-filterrow"></div>
-        <div class="field"><label>Registro</label><select id="c-folio"></select></div>
+        <div class="row2 c-buscarow">
+          <div class="field"><label>Número de folio</label><input id="c-buscar-folio" inputmode="numeric" placeholder="Escribe el folio"></div>
+          <div class="field"><button type="button" class="btn" id="c-buscar">Seleccionar</button></div>
+        </div>
         <div id="c-preview"></div>
       </div>
       <div id="c-letterwrap"></div>
