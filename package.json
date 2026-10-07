@@ -1,0 +1,8 @@
+{
+  "name": "aplicacion-tesis",
+  "private": true,
+  "description": "Registro de tesis — página estática servida con Node.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
