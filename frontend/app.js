@@ -3,6 +3,8 @@ const GRADOS = [{v:'Licenciatura', n:3},{v:'Maestría', n:4},{v:'Doctorado', n:5
 
 let sb = null;
 let authRol = 'usuario';
+// Pruebas: false entra directo. Ponlo en true para volver a pedir inicio de sesión.
+const LOGIN_ACTIVO = false;
 let authMode = 'login';
 let alumnos = [];
 let docentes = [];
@@ -864,6 +866,7 @@ document.getElementById('auth-submit').addEventListener('click', async ()=>{
   }
 });
 document.getElementById('btn-salir').addEventListener('click', async ()=>{
+  if (!LOGIN_ACTIVO) return;
   if (sb) await sb.auth.signOut();
   alumnos = []; docentes = []; expedientes = []; emitidos = [];
   authRol = 'usuario';
@@ -873,6 +876,17 @@ document.getElementById('btn-salir').addEventListener('click', async ()=>{
 (async function boot(){
   if (!initClient()) {
     showAuthMsg('Pega la publishable key en config.js (SUPABASE_KEY) y recarga.');
+    return;
+  }
+  if (!LOGIN_ACTIVO) {
+    authRol = 'admin';
+    try { await loadAll(); }
+    catch (err) { toast(err.message || 'No se pudieron cargar los datos'); }
+    document.getElementById('auth-gate').hidden = true;
+    document.getElementById('app-shell').hidden = false;
+    document.getElementById('btn-salir').hidden = true;
+    setRole('admin', true);
+    goTab(document.querySelector('.tab.active')?.dataset.tab || 'inicio');
     return;
   }
   const { data } = await sb.auth.getSession();
