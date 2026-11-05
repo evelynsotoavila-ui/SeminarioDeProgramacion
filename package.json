@@ -1,8 +1,12 @@
 {
   "name": "aplicacion-tesis",
   "private": true,
-  "description": "Registro de tesis — página estática servida con Node.js",
+  "description": "Registro de tesis — Node.js + MySQL local",
   "scripts": {
     "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "mysql2": "^3.14.0"
   }
 }

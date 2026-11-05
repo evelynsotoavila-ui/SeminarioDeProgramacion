@@ -61,7 +61,8 @@ create table if not exists public.tesis_docentes (
   docente_nombre text not null,
   fungio text not null,
   fecha date,
-  folio integer not null unique
+  folio integer unique,
+  punto text
 );
 
 create table if not exists public.tesis_documentos (
@@ -223,6 +224,9 @@ create policy emitidos_delete on public.emitidos
 grant usage on schema public to authenticated;
 grant select, insert, update, delete on public.profiles, public.alumnos, public.docentes, public.tesis, public.tesis_docentes, public.tesis_documentos, public.emitidos to authenticated;
 grant usage, select on sequence public.folio_seq to authenticated;
+
+alter table public.tesis_docentes alter column folio drop not null;
+alter table public.tesis_docentes add column if not exists punto text;
 
 -- ---------- storage ----------
 insert into storage.buckets (id, name, public)

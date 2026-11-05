@@ -1,6 +1,8 @@
+require('dotenv').config();
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { handleApi, ensureAppTables } = require('./api');
 
 const root = path.join(__dirname, 'frontend');
 const port = Number(process.env.PORT) || 3000;
@@ -17,9 +19,13 @@ const types = {
   '.webp': 'image/webp'
 };
 
-const server = http.createServer((req, res) => {
-  const urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
-  const rel = urlPath === '/' ? 'index.html' : urlPath.replace(/^\/+/, '');
+const server = http.createServer(async (req, res) => {
+  const url = new URL(req.url || '/', 'http://127.0.0.1');
+  if (url.pathname.startsWith('/api/')) {
+    await handleApi(req, res, url);
+    return;
+  }
+  const rel = url.pathname === '/' ? 'index.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '');
   const file = path.normalize(path.join(root, rel));
   if (!file.startsWith(root)) {
     res.writeHead(403);
@@ -37,6 +43,13 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(port, '127.0.0.1', () => {
-  console.log('Registro de tesis en http://127.0.0.1:' + port + '/');
-});
+ensureAppTables()
+  .then(() => {
+    server.listen(port, '127.0.0.1', () => {
+      console.log('Registro de tesis en http://127.0.0.1:' + port + '/');
+    });
+  })
+  .catch(err => {
+    console.error('No se pudo iniciar MySQL:', err && err.code ? err.code : err.message);
+    process.exit(1);
+  });

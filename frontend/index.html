@@ -101,7 +101,10 @@
             <select id="r-programa"><option>Individual</option><option>Curso Opción Grado</option><option>Curso Opción Tesis</option></select>
           </div>
         </div>
-        <div class="field"><label>Título de la tesis</label><input id="r-titulo" placeholder="Título completo del trabajo"></div>
+        <div class="row2">
+          <div class="field"><label>Título de la tesis</label><input id="r-titulo" placeholder="Título completo del trabajo"></div>
+          <div class="field"><label>Folio</label><input id="r-folio" maxlength="20" placeholder="Siguiente folio"></div>
+        </div>
         <div class="row3">
           <div class="field"><label>Fecha de elaboración</label><input id="r-fecha" type="date"></div>
           <div class="field"><label>Ciudad</label>
@@ -161,54 +164,77 @@
 
       <div class="card">
         <h3>Listado (<span id="a-count"></span>)</h3>
-        <div class="tablewrap"><table>
-          <thead><tr><th>Alumno</th><th>Matrícula</th><th>Sexo</th><th>Programa habitual</th><th>Fecha de registro</th><th>Tesis registradas</th><th></th></tr></thead>
+        <div class="field" style="max-width:360px;"><label>Buscar</label><input id="a-q" placeholder="Nombre o matrícula…"></div>
+        <div class="tablewrap"><table class="excel-table">
+          <thead><tr><th class="col-accion admin-only">Acción</th><th>Alumno</th><th>Matrícula</th><th>Sexo</th><th>Programa habitual</th><th>Fecha de registro</th><th>Tesis registradas</th></tr></thead>
           <tbody id="a-tbody"></tbody>
         </table></div>
+        <button type="button" class="btn ghost" id="a-mas" hidden>Cargar más</button>
       </div>
     </div>
 
     <div class="section" id="sec-docentes">
       <h2>Docentes</h2>
       <p class="lede">Al registrar un nuevo docente, la lista se reordena alfabéticamente de inmediato. El grado académico se edita aquí y se sincroniza en automático con Constancias.</p>
-      <div class="readonly-note">🔒 Modo de solo lectura: puedes consultar el listado, pero no agregar, editar ni quitar docentes.</div>
+      <div class="readonly-note">🔒 Modo de solo lectura: puedes consultar el listado, pero no agregar ni editar docentes.</div>
 
       <div class="card admin-only">
-        <h3>Agregar docente</h3>
+        <h3 id="d-form-title">Agregar docente</h3>
+        <input type="hidden" id="d-id">
         <div class="row3">
           <div class="field"><label>Nombre completo</label><input id="d-nombre" placeholder="APELLIDOS NOMBRE, TÍTULO"></div>
-          <div class="field"><label>No. Empleado</label><input id="d-empleado" type="number"></div>
-          <div class="field"><label>Grado académico</label><select id="d-grado"><option>Licenciatura</option><option>Maestría</option><option>Doctorado</option></select></div>
+          <div class="field"><label>No. Empleado</label><input id="d-empleado"></div>
+          <div class="field"><label>TC</label><select id="d-tc"><option value="">—</option><option>SI</option><option>NO</option></select></div>
         </div>
         <div class="row4">
           <div class="field"><label>Teléfono</label><input id="d-telefono"></div>
           <div class="field"><label>Correo</label><input id="d-correo"></div>
           <div class="field"><label>Sexo</label><select id="d-sexo"><option>M</option><option>F</option></select></div>
-          <div class="field"><label>Fecha de registro</label><input id="d-fecha" type="date"></div>
+          <div class="field"><label>Grado académico (referencia)</label><select id="d-grado"><option>Licenciatura</option><option>Maestría</option><option>Doctorado</option></select></div>
         </div>
         <button class="btn" id="d-agregar">Registrar docente</button>
+        <button type="button" class="btn ghost" id="d-cancelar">Limpiar</button>
       </div>
 
       <div class="card">
-        <h3>Listado (<span id="d-count"></span>) — orden alfabético automático</h3>
-        <div class="tablewrap"><table>
-          <thead><tr><th>Docente</th><th>No. Empleado</th><th>Grado académico</th><th>Correo</th><th>Fecha de registro</th><th>Tesis asignadas</th><th></th></tr></thead>
+        <h3>Listado (<span id="d-count"></span>)</h3>
+        <div class="field" style="max-width:360px;"><label>Buscar docente</label><input id="d-q" placeholder="Nombre o no. de empleado…"></div>
+        <div class="tablewrap"><table class="excel-table">
+          <thead><tr>
+            <th class="col-accion admin-only">Acción</th><th>No.</th><th>Docente</th><th>No. Empleado</th><th>Teléfono</th><th>Correo</th><th>Sexo</th><th>TC</th><th>No. Tesis</th>
+          </tr></thead>
           <tbody id="d-tbody"></tbody>
         </table></div>
+        <button type="button" class="btn ghost" id="d-mas" hidden>Cargar más</button>
       </div>
+      <div id="d-detalle"></div>
     </div>
 
     <div class="section" id="sec-actividad">
       <h2>Actividad Docente</h2>
-      <p class="lede">Tesis de cada docente clasificadas por cargo, tipo de grado y año. Pica cualquier número para ver las tesis que lo forman, con su fecha y su consecutivo dentro de ese cargo.</p>
+      <p class="lede">Se calcula sola desde la Base de Datos: cada tesis ligada a un docente (director, asesor o revisor) suma aquí. No se captura a mano; al registrar o editar una tesis, los conteos se actualizan al recargar esta pantalla.</p>
       <div class="card">
         <div class="row3">
-          <div class="field"><label>Tipo de grado</label><select id="act-grado"><option value="all">Todos</option><option>Licenciatura</option><option>Maestría</option><option>Doctorado</option></select></div>
           <div class="field"><label>Año</label><select id="act-anio"></select></div>
+          <div class="field"><label>Ciudad</label><select id="act-ciudad"><option value="GENERAL">GENERAL</option></select></div>
           <div></div>
         </div>
-        <div class="tablewrap"><table>
-          <thead><tr><th>Docente</th><th>Director(a)</th><th>Asesor(a)/Revisor(a)</th><th>Licenciatura</th><th>Maestría</th><th>Doctorado</th><th>Total</th></tr></thead>
+        <div class="tablewrap"><table class="excel-table act-table">
+          <thead>
+            <tr>
+              <th rowspan="2">No</th>
+              <th rowspan="2">Docente</th>
+              <th colspan="2">Licenciatura</th>
+              <th colspan="3">Maestría</th>
+              <th colspan="3">Doctorado</th>
+              <th rowspan="2">TOTAL</th>
+            </tr>
+            <tr>
+              <th>A</th><th>R</th>
+              <th>A</th><th>D</th><th>R</th>
+              <th>A</th><th>D</th><th>R</th>
+            </tr>
+          </thead>
           <tbody id="act-tbody"></tbody>
         </table></div>
       </div>
@@ -217,8 +243,8 @@
 
     <div class="section" id="sec-bd">
       <h2>Base de Datos</h2>
-      <p class="lede">Se actualiza sola con cada alta, edición o baja, con las mismas columnas de tu hoja actual. El No. de Tesis siempre queda del 1 en adelante sin saltos, aunque se borren registros intermedios.</p>
-      <div class="readonly-note">🔒 Modo de solo lectura: puedes consultar todos los registros, pero no borrarlos.</div>
+      <p class="lede">Se actualiza sola con cada alta o edición. El No. de Tesis se renumera por docente. Lo que cambies aquí queda en MySQL y se refleja en Constancias y Actividad Docente.</p>
+      <div class="readonly-note">🔒 Modo de solo lectura: puedes consultar todos los registros, pero no editarlos.</div>
       <div class="stat-row">
         <div class="stat"><div class="num" id="s-tesis">0</div><div class="lab">Tesis registradas</div></div>
         <div class="stat"><div class="num" id="s-const">0</div><div class="lab">Renglones / Folios</div></div>
@@ -227,24 +253,90 @@
       </div>
       <div class="card bd-filtercard">
         <div class="bd-filters">
-          <div class="field"><label>Fecha inicio</label><input id="bd-desde" type="date"></div>
-          <div class="field"><label>Fecha fin</label><input id="bd-hasta" type="date"></div>
+          <div class="field"><label>Año</label><select id="bd-anio"><option value="">Todos</option></select></div>
           <div class="field"><label>Grado</label>
-            <select id="bd-grado"><option value="Todos">Todos</option><option>Licenciatura</option><option>Maestría</option><option>Doctorado</option></select>
+            <select id="bd-grado"><option value="Todos">Todos</option></select>
           </div>
+          <div class="field"><label>Ciudad</label><select id="bd-ciudad"><option value="Todas">Todas</option></select></div>
+          <div class="field"><label>Programa</label><select id="bd-programa"><option value="Todos">Todos</option></select></div>
+          <div class="field"><label>Punto</label><select id="bd-punto"><option value="Todos">Todos</option></select></div>
+          <div class="field"><label>Buscar</label><input id="bd-q" placeholder="Alumno, título o docente…"></div>
           <div class="bd-actions">
             <button type="button" class="btn ghost small" id="bd-limpiar">Limpiar filtros</button>
             <button type="button" class="btn ghost small" id="bd-vertodo">Ver todo</button>
           </div>
         </div>
-        <div id="bd-meta"><span id="bd-count">Mostrando 0 de 0 registros</span><span id="bd-folio-status"></span></div>
+        <div id="bd-meta"><span id="bd-count">Total de registros: 0</span><span id="bd-folio-status"></span></div>
+      </div>
+      <div class="card admin-only">
+        <h3 id="bd-form-title">Editar registro</h3>
+        <input type="hidden" id="bd-f-id">
+        <div class="row4">
+          <div class="field"><label>Año</label><input id="bd-f-anio"></div>
+          <div class="field"><label>No.</label><input id="bd-f-no"></div>
+          <div class="field"><label>Folio</label><input id="bd-f-folio" maxlength="20"></div>
+          <div class="field"><label>Grado</label><input id="bd-f-grado"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Alumno</label><textarea id="bd-f-alumno" rows="2"></textarea></div>
+          <div class="field"><label>Título de la tesis</label><textarea id="bd-f-titulo" rows="2"></textarea></div>
+        </div>
+        <div class="row4">
+          <div class="field"><label>Fecha elaboración</label><input id="bd-f-fecha" type="date"></div>
+          <div class="field"><label>Docente</label><input id="bd-f-docente" list="bd-docentes-dl"><datalist id="bd-docentes-dl"></datalist></div>
+          <div class="field"><label>Fungió</label>
+            <select id="bd-f-fungio">
+              <option value="">—</option>
+              <option>DIRECTOR(A)</option>
+              <option>ASESOR(A)/REVISOR(A)</option>
+            </select>
+          </div>
+          <div class="field"><label>Punto</label><input id="bd-f-punto"></div>
+        </div>
+        <div class="row4">
+          <div class="field"><label>Ciudad</label><input id="bd-f-ciudad"></div>
+          <div class="field"><label>No. Caja</label><input id="bd-f-caja"></div>
+          <div class="field"><label>Capturó</label><input id="bd-f-capturo"></div>
+          <div class="field"><label>Fecha captura</label><input id="bd-f-fechacap" type="date"></div>
+        </div>
+        <div class="row4">
+          <div class="field"><label>Archivo</label><select id="bd-f-archivo"><option value="">—</option><option>SI</option><option>NO</option></select></div>
+          <div class="field"><label>Digital</label><select id="bd-f-digital"><option value="">—</option><option>SI</option><option>NO</option></select></div>
+          <div class="field"><label>Programa</label><input id="bd-f-programa"></div>
+          <div class="field"><label>PDF</label><input id="bd-f-pdf"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>CD</label><input id="bd-f-cd"></div>
+          <div class="field"><label>Observaciones</label><input id="bd-f-obs"></div>
+        </div>
+        <button type="button" class="btn" id="bd-guardar">Guardar cambios</button>
+        <button type="button" class="btn ghost" id="bd-cancelar">Limpiar</button>
       </div>
       <div class="card">
-        <div class="tablewrap"><table>
+        <div class="tablewrap"><table class="excel-table" id="bd-table">
           <thead><tr>
-            <th>Folio</th><th>Alumno</th><th>Grado</th><th>Título Tesis</th><th>Fecha Elab.</th>
-            <th>Docente</th><th>Fungió</th><th>Consec. cargo</th><th>Fecha asig.</th><th>Punto</th><th>Ciudad</th><th>No. Tesis</th>
-            <th>Capturó</th><th>Fecha Captura</th><th>Archivo</th><th>Digital</th><th>Programa</th><th>No. Empleado</th><th>Observaciones</th><th>Documentos</th><th></th>
+            <th class="col-accion admin-only">Acción</th>
+            <th data-sort="no">No.</th>
+            <th data-sort="folio">Folio</th>
+            <th data-sort="alumno">Alumno</th>
+            <th data-sort="grado">Grado</th>
+            <th data-sort="titulo_tesis">Título Tesis</th>
+            <th data-sort="fecha_elaboracion">Fecha Elaboración</th>
+            <th data-sort="docente">Docente</th>
+            <th data-sort="fungio">Fungió</th>
+            <th data-sort="punto">Punto</th>
+            <th data-sort="ciudad">Ciudad</th>
+            <th data-sort="no_tesis">No. Tesis</th>
+            <th data-sort="no_caja">No. Caja</th>
+            <th data-sort="capturo">Capturó</th>
+            <th data-sort="fecha_captura">Fecha Captura</th>
+            <th data-sort="archivo">Archivo</th>
+            <th data-sort="digital">Digital</th>
+            <th data-sort="programa">Programa</th>
+            <th data-sort="no_empleado">No. Empleado</th>
+            <th data-sort="observaciones">Observaciones</th>
+            <th data-sort="pdf">PDF</th>
+            <th data-sort="cd">CD</th>
           </tr></thead>
           <tbody id="bd-tbody"></tbody>
         </table></div>
@@ -259,7 +351,7 @@
       <div class="card">
         <div class="field"><label>Buscar</label><input id="bu-q" placeholder="Escribe un nombre, folio o palabra del título…"></div>
         <div class="tablewrap"><table>
-          <thead><tr><th>Folio</th><th>Alumno</th><th>Grado</th><th>Título Tesis</th><th>Docente</th><th>Fungió</th><th>No. Tesis</th></tr></thead>
+          <thead><tr><th>Folio</th><th>Alumno</th><th>Grado</th><th>Título Tesis</th><th>Año</th><th>Ciudad</th><th>Programa</th></tr></thead>
           <tbody id="bu-tbody"></tbody>
         </table></div>
       </div>
@@ -274,9 +366,21 @@
       <div class="card" id="c-card-ind">
         <h3>Seleccionar registro</h3>
         <div class="filterrow" id="c-filterrow"></div>
-        <div class="row2 c-buscarow">
-          <div class="field"><label>Número de folio</label><input id="c-buscar-folio" inputmode="numeric" placeholder="Escribe el folio"></div>
-          <div class="field"><button type="button" class="btn" id="c-buscar">Seleccionar</button></div>
+        <div class="row3 c-buscarow">
+          <div class="field"><label>Folio</label><input id="c-buscar-folio" placeholder="Escribe el folio"></div>
+          <div class="field"><label>Tipo de constancia</label>
+            <select id="c-tipo">
+              <option value="3.3.1">3.3.1 Tesis dirigidas y concluidas</option>
+              <option value="3.3.2">3.3.2 Revisor de tesis</option>
+              <option value="3.3.3">3.3.3 Tesinas asesoradas y/o revisadas</option>
+            </select>
+          </div>
+          <div class="field"><button type="button" class="btn" id="c-buscar" style="margin-top:18px;">Buscar</button></div>
+        </div>
+        <div class="field autowrap" id="c-alumno-fallback" hidden>
+          <label>Buscar por nombre de alumno</label>
+          <input id="c-alumno-q" autocomplete="off" placeholder="Nombre del alumno…">
+          <div class="suggestions" id="sugg-c-alumno"></div>
         </div>
         <div id="c-preview"></div>
       </div>
@@ -304,8 +408,8 @@
     <div class="section" id="sec-historial">
       <h2>Historial de documentos emitidos</h2>
       <p class="lede">Cada oficio o constancia que se genera queda registrado aquí con su fecha de emisión, a quién va dirigido y de qué docente es.</p>
-      <div class="card"><div class="tablewrap"><table>
-        <thead><tr><th>Fecha de emisión</th><th>Tipo</th><th>Dirigido a</th><th>Docente</th><th>Detalle</th></tr></thead>
+      <div class="card"><div class="tablewrap"><table class="excel-table">
+        <thead><tr><th>Fecha</th><th>Tipo</th><th>Usuario</th><th>Valor anterior</th><th>Valor nuevo</th><th>Detalle</th></tr></thead>
         <tbody id="hi-tbody"></tbody></table></div></div>
     </div>
 
@@ -314,11 +418,82 @@
       <p class="lede">Muestra quién dirige cada tesis (BD Asignación Asesor) y genera el oficio de asignación de director/asesor para firma, con folio y datos tomados del mismo expediente.</p>
       <div class="card">
         <h3>Directores/asesores asignados</h3>
-        <div class="field" style="max-width:240px;"><label>Fecha de emisión del oficio</label><input id="as-fecha" type="date"></div>
-        <div class="tablewrap"><table>
-          <thead><tr><th>No. Tesis</th><th>Alumno</th><th>Grado</th><th>Director/a asignado/a</th><th>No. Empleado</th><th>Fecha de asignación</th><th></th></tr></thead>
+        <div class="bd-filters">
+          <div class="field"><label>Año</label><select id="as-anio"><option value="">Todos</option></select></div>
+          <div class="field"><label>Estatus</label><select id="as-estatus"><option value="Todos">Todos</option></select></div>
+          <div class="field"><label>Buscar</label><input id="as-q" placeholder="Alumno, matrícula o docente…"></div>
+        </div>
+        <p id="as-count" class="lede" style="margin:8px 0 12px;">Total: 0</p>
+        <div class="tablewrap"><table class="excel-table">
+          <thead><tr>
+            <th class="col-accion admin-only">Acción</th>
+            <th>No.</th><th>FolioA</th><th>Sexo</th><th>Nombre Alumno</th><th>Matricula</th><th>Maestría</th>
+            <th>Teléfono A</th><th>Correo A</th><th>FolioM</th><th>Nombre Docente</th><th>Teléfono</th><th>Correo</th>
+            <th>Fecha Solicitud</th><th>Estatus</th><th>EA</th><th>ED</th><th>TESIS ENTREGADA</th><th>Comentarios</th>
+          </tr></thead>
           <tbody id="as-tbody"></tbody>
         </table></div>
+        <button type="button" class="btn ghost" id="as-mas" hidden>Cargar más</button>
+      </div>
+      <div class="card admin-only">
+        <h3 id="as-form-title">Agregar asignación</h3>
+        <input type="hidden" id="as-id">
+        <div class="row4">
+          <div class="field"><label>Año</label><input id="as-f-anio"></div>
+          <div class="field"><label>No.</label><input id="as-f-no"></div>
+          <div class="field"><label>FolioA</label><input id="as-f-folioa" maxlength="20"></div>
+          <div class="field"><label>FolioM</label><input id="as-f-foliom" maxlength="20"></div>
+        </div>
+        <div class="row4">
+          <div class="field"><label>Nombre Alumno</label><input id="as-f-alumno"></div>
+          <div class="field"><label>Sexo</label><select id="as-f-sexo"><option value="">—</option><option>M</option><option>F</option></select></div>
+          <div class="field"><label>Matricula</label><input id="as-f-mat"></div>
+          <div class="field"><label>Maestría / Programa</label><input id="as-f-prog"></div>
+        </div>
+        <div class="row4">
+          <div class="field"><label>Teléfono A</label><input id="as-f-tela"></div>
+          <div class="field"><label>Correo A</label><input id="as-f-correoa"></div>
+          <div class="field"><label>Nombre Docente</label><input id="as-f-docente"></div>
+          <div class="field"><label>Teléfono</label><input id="as-f-teld"></div>
+        </div>
+        <div class="row4">
+          <div class="field"><label>Correo</label><input id="as-f-correod"></div>
+          <div class="field"><label>Fecha Solicitud</label><input id="as-f-fecha" type="date"></div>
+          <div class="field"><label>Estatus</label><input id="as-f-estatus"></div>
+          <div class="field"><label>TESIS ENTREGADA</label><input id="as-f-entregada"></div>
+        </div>
+        <div class="row4">
+          <div class="field"><label>EA</label><input id="as-f-ea"></div>
+          <div class="field"><label>ED</label><input id="as-f-ed"></div>
+          <div class="field" style="grid-column:span 2;"><label>Comentarios</label><input id="as-f-obs"></div>
+        </div>
+        <button type="button" class="btn" id="as-guardar">Guardar asignación</button>
+        <button type="button" class="btn ghost" id="as-cancelar">Limpiar</button>
+      </div>
+      <div class="card">
+        <h3>Generar oficio</h3>
+        <div class="row4">
+          <div class="field"><label>Tipo</label>
+            <select id="as-tipo">
+              <option value="Alumno">Alumno</option>
+              <option value="Comite">Comité</option>
+              <option value="Doctor">Doctor/a</option>
+            </select>
+          </div>
+          <div class="field"><label>Folio</label><input id="as-folio-of" placeholder="FolioA o FolioM"></div>
+          <div class="field"><label>Fecha de emisión</label><input id="as-fecha" type="date"></div>
+          <div class="field"><button type="button" class="btn" id="as-oficio-btn" style="margin-top:18px;">Generar oficio</button></div>
+        </div>
+        <div id="as-comite-campos" hidden>
+          <p class="lede" style="margin:8px 0 12px;">Miembros del comité (se rellenan si hay docentes ligados al alumno; puedes editarlos).</p>
+          <datalist id="as-docentes-dl"></datalist>
+          <div class="row4">
+            <div class="field"><label>Asesor de Contenido</label><input id="as-com-cont1" list="as-docentes-dl"></div>
+            <div class="field"><label>Asesor de Contenido (2)</label><input id="as-com-cont2" list="as-docentes-dl"></div>
+            <div class="field"><label>Asesor de Estadística</label><input id="as-com-est" list="as-docentes-dl"></div>
+            <div class="field"><label>Asesor de Metodología</label><input id="as-com-met" list="as-docentes-dl"></div>
+          </div>
+        </div>
       </div>
       <div id="as-oficiowrap"></div>
     </div>

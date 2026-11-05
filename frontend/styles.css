@@ -224,26 +224,128 @@ select.inline{ border-radius:7px; padding:5px 7px; }
 input.bd-folio{ width:92px; border:1px solid var(--line); border-radius:7px; background:#fff; padding:5px 8px; font:inherit; color:var(--ink); }
 input.bd-folio:focus{ outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(30,42,71,.1); }
 #bd-mas{ margin-top:14px; }
+.excel-table{ font-size:11.5px; border-collapse:separate; border-spacing:0; }
+.excel-table th{
+  background:#702F7A; color:#fff; border:1px solid #5a2462; text-transform:none;
+  letter-spacing:0; font-size:10.5px; font-weight:600; white-space:nowrap; padding:7px 8px;
+}
+.excel-table td{ border:1px solid #cfcfcf; padding:6px 8px; vertical-align:top; color:#222; }
+.excel-table tbody tr:nth-child(odd) td{ background:#f3f3f3; }
+.excel-table tbody tr:nth-child(even) td{ background:#e6e6e6; }
+.excel-table tbody tr:hover td{ background:#efe2f3; }
+.excel-table th.col-accion,
+.excel-table td.col-accion{
+  position:sticky; left:0; z-index:3; width:1%; white-space:nowrap;
+  box-shadow:4px 0 8px -4px rgba(30,42,71,.28);
+}
+.excel-table th.col-accion{ z-index:4; background:#702F7A; }
+.excel-table tbody tr:nth-child(odd) td.col-accion{ background:#f3f3f3; }
+.excel-table tbody tr:nth-child(even) td.col-accion{ background:#e6e6e6; }
+.excel-table tbody tr:hover td.col-accion{ background:#efe2f3; }
+.btn.edit-btn{ padding:5px 10px; font-size:11px; }
+.excel-table th[data-sort]{ cursor:pointer; }
+.excel-table th.sort-asc::after{ content:' ▲'; font-size:9px; }
+.excel-table th.sort-desc::after{ content:' ▼'; font-size:9px; }
+.excel-table .alumno-cell{ white-space:pre-line; min-width:160px; max-width:240px; }
+.folio-cell{ white-space:nowrap; }
+.act-table td{ text-align:center; }
+.act-table td:nth-child(2){ text-align:left; }
+.act-table tr.act-alto td{ background:#702F7A !important; color:#fff !important; }
+.act-table tr.act-cero td{ background:#5c1a1a !important; color:#fff !important; }
 .c-buscarow{ align-items:end; }
 .c-buscarow .field{ margin-bottom:0; }
-#c-descargar{ margin: 0 0 22px; }
-.carta{ width:100%; max-width:8.5in; min-height:10.4in; margin:0 auto 14px; padding:.6in .7in; display:flex; flex-direction:column; box-sizing:border-box; }
-.carta-table{ width:100%; border-collapse:collapse; margin-top:22px; font-family:'IBM Plex Sans', sans-serif; font-size:12px; table-layout:fixed; border:1px solid #1c1a15; }
-.carta-table th, .carta-table td{ border:1px solid #1c1a15; padding:8px 6px; text-align:center; vertical-align:middle; background:#fff; color:#1c1a15; white-space:normal; overflow-wrap:break-word; word-break:normal; box-sizing:border-box; }
-.carta-table th{ font-size:10px; letter-spacing:0; text-transform:uppercase; font-weight:600; line-height:1.25; }
-.carta-cierre{ margin-top:auto; text-align:center; padding-top:28px; }
-.carta-firma{ margin-top:48px; }
-@page{ size:letter portrait; margin:0; }
+.carta-acciones{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin: 0 0 10px; }
+.carta{
+  width:8.5in; margin:0 auto 14px; padding:.6in .75in .7in;
+  display:flex; flex-direction:column; box-sizing:border-box;
+  background:#fff; color:#111; border:1px solid var(--line);
+  font-family: Arial, Helvetica, sans-serif; font-size:11.5pt; line-height:1.45;
+}
+.carta-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin:0 0 8px; }
+.carta-logo{ height:92px; width:auto; max-width:42%; object-fit:contain; }
+.carta-logo-fca{ height:102px; }
+.carta-ref{ text-align:right; font-size:11.5pt; line-height:1.45; margin:4px 0 16px; }
+.carta-ref .ref-label{ font-weight:700; letter-spacing:.02em; }
+.carta-ref .ref-punto{ font-weight:700; text-transform:uppercase; }
+.carta-folio-ok{ font-weight:700; }
+.carta-folio-falta{ display:inline-block; background:#111; color:#fff; font-weight:700; padding:1px 8px; }
+.carta p{ margin:0 0 12px; text-align:justify; text-justify:inter-word; }
+.carta .dest{ text-align:left; font-weight:700; margin-bottom:14px; }
+.carta-table{
+  width:100%; border-collapse:separate; border-spacing:0;
+  margin:14px 0 0; font-family:Arial, Helvetica, sans-serif; font-size:11pt;
+  table-layout:fixed; border:1px solid #111;
+}
+.carta-table th, .carta-table td{
+  border:1px solid #111; padding:10px 8px; text-align:center; vertical-align:middle;
+  background:#fff; color:#111; white-space:normal; overflow-wrap:break-word; word-break:normal;
+  box-sizing:border-box; line-height:1.35;
+}
+.carta-table th{ font-size:9.5pt; letter-spacing:0; text-transform:uppercase; font-weight:700; line-height:1.25; }
+.carta-table td.nom{ text-align:left; }
+.carta-table td.fecha{ white-space:nowrap; padding:12px 8px 14px; }
+.carta-cierre{ margin-top:48px; text-align:center; padding-top:4px; line-height:1.5; }
+.carta-cierre p{ text-align:center; margin:0; }
+.carta-firma{ margin-top:44px; font-weight:700; }
+.carta.oficio{
+  width:216mm; min-height:340mm; font-size:12pt; line-height:1.5; padding:14mm 16mm 12mm;
+}
+.carta.oficio .carta-cierre{ margin-top:28px; }
+.carta.oficio .carta-firma{ margin-top:78pt; min-height:52pt; }
+.carta.oficio p{ margin:0 0 12pt; text-align:justify; line-height:1.5; }
+.oficio-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:24px; margin:0 0 18px; }
+.oficio-top img{ height:92px; width:auto; object-fit:contain; }
+.oficio-meta{ text-align:right; font-size:12pt; line-height:1.5; padding-top:6px; }
+.oficio-meta b{ font-weight:700; }
+.oficio-dest{ text-align:left !important; font-weight:700; margin:0 0 4px !important; }
+.oficio-presente{ text-align:left !important; font-weight:700; letter-spacing:.18em; margin:0 0 14pt !important; }
+.oficio-h{ font-weight:700; margin:12pt 0 8pt !important; text-align:left !important; }
+.oficio-tabla{
+  width:100%; border-collapse:separate; border-spacing:0; margin:0 0 14pt;
+  table-layout:fixed; border:1px solid #111; font-size:12pt;
+}
+.oficio-tabla td{
+  border:1px solid #111; padding:8px 10px; vertical-align:middle; background:#fff; color:#111;
+  line-height:1.4; word-break:break-word;
+}
+.oficio-ol{ margin:0 0 12pt; padding-left:22px; }
+.oficio-ol li{ margin:0 0 10pt; text-align:justify; line-height:1.5; }
+.oficio-ul{ margin:4pt 0 12pt 8px; padding-left:22px; }
+.oficio-ul li{ margin:0 0 6pt; text-align:justify; line-height:1.5; }
+.oficio-cuerpo{ flex:1 1 auto; }
+.oficio-pie{
+  margin-top:auto; padding-top:18px; font-size:9pt; line-height:1.35; text-align:left;
+}
+.oficio-pie p{ margin:0; text-align:left; font-size:9pt; line-height:1.35; }
+.oficio-iniciales{ margin-top:18pt !important; text-align:left !important; font-size:9pt; }
+.oficio-tabla td.rol{ font-weight:700; text-align:left; width:38%; }
+.oficio-rol{ margin:0 0 10pt !important; text-align:justify; line-height:1.5; }
+.oficio-sub{ font-weight:700; margin:12pt 0 8pt !important; text-align:left !important; }
+.oficio-ul .oficio-ul{ margin:4pt 0 8pt 16px; }
+.oficio-presente-com{ text-align:left !important; font-weight:700; margin:0 0 12pt !important; letter-spacing:0; }
+@page{ size:letter portrait; margin:16mm 18mm 16mm 18mm; }
+@page OficioHoja{ size:216mm 340mm portrait; margin:14mm 16mm 14mm 16mm; }
 @media print{
-  .topbar, .rail, #auth-gate, .toast, #c-descargar,
+  html, body{ margin:0 !important; padding:0 !important; height:auto !important; background:#fff !important; overflow:visible !important; }
+  .topbar, .rail, .toast, #auth-gate, .carta-acciones, .note,
   .section > h2, .section > .lede, .section > .readonly-note, .section > .filterrow,
-  #c-card-ind, #c-card-var, #cc-letter{ display:none !important; }
+  #c-card-ind, #c-card-var, #cc-letter, #c-modorow, #c-filterrow,
+  #sec-asignacion .card{ display:none !important; }
   .section{ display:none !important; }
-  #sec-constancias{ display:block !important; }
-  #c-letterwrap{ display:block !important; }
-  .sheet{ padding:0 !important; max-width:none !important; }
-  .carta{ max-width:none; min-height:11in; margin:0; padding:1.5cm 1.6cm; border:none; box-shadow:none; box-sizing:border-box; }
+  #sec-constancias:has(#constancia-print),
+  #sec-asignacion:has(#constancia-print){ display:block !important; }
+  .app, .main, .sheet, #c-letterwrap, #as-oficiowrap{ padding:0 !important; margin:0 !important; max-width:none !important; width:auto !important; background:#fff !important; overflow:visible !important; }
+  #constancia-print{ display:block !important; overflow:visible !important; }
+  .carta{
+    width:100% !important; max-width:none; min-height:0 !important; height:auto !important;
+    margin:0 !important; padding:0 0 10px !important; border:none !important; box-shadow:none !important;
+    overflow:visible !important;
+  }
+  .carta.oficio{ page:OficioHoja; page-break-after:always; break-after:page; padding:0 !important; }
+  .carta.oficio.oficio-p2{ page-break-after:auto; break-after:auto; }
+  .carta-table{ overflow:visible !important; }
   .carta-table th, .carta-table td, .carta-table tr:hover td{ background:#fff !important; }
+  .carta-table td.fecha{ padding-bottom:16px !important; }
 }
 #auth-gate{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
 #auth-gate .card{ width:100%; max-width:440px; margin:0; }
