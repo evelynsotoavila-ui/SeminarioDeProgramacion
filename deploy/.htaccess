@@ -1,0 +1,22 @@
+DirectoryIndex index.html
+Options -Indexes
+
+<IfModule mod_authz_core.c>
+  <Files "config.php">
+    Require all denied
+  </Files>
+  <Files "config.local.php">
+    Require all denied
+  </Files>
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /progest/
+
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  RewriteRule ^api(?:/.*)?$ api/index.php [QSA,L]
+</IfModule>
